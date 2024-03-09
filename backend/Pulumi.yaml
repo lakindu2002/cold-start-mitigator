@@ -1,0 +1,7 @@
+name: heat-sheild-api
+runtime: nodejs
+description: Cold Start Predictor API
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: ""

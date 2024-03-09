@@ -1,0 +1,3 @@
+config:
+  aws:region: us-east-1
+  heat-sheild-api:web-domain: heat-shield.lakinduhewawasam.com

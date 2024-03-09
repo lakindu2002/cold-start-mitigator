@@ -1,0 +1,93 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This template creates a role which only HeatShield can use.",
+    "Outputs": {
+        "RoleARN": {
+            "Description": "The ARN of the role that can be assumed by HeatShield's account.",
+            "Value": {
+                "Fn::GetAtt": [
+                    "HeatShieldIntegrationRole",
+                    "Arn"
+                ]
+            }
+        }
+    },
+    "Resources": {
+        "HeatShieldIntegrationRole": {
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": "932055394976"
+                            },
+                            "Condition": {
+                                "StringEquals": {
+                                    "sts:ExternalId": {
+                                        "Ref": "ExternalId"
+                                    }
+                                }
+                            },
+                            "Sid": ""
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/ReadOnlyAccess"
+                ],
+                "Path": "/"
+            },
+            "Type": "AWS::IAM::Role"
+        },
+        "HeatShieldIntegrationPolicies": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "HeatShieldIntegration",
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "lambda:UpdateFunctionConfiguration",
+                                "lambda:InvokeFunction"
+                            ],
+                            "Resource": "arn:aws:lambda:*:*:function:*"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "iam:PassRole"
+                            ],
+                            "Resource": [
+                                {
+                                    "Fn::GetAtt": [
+                                        "HeatShieldIntegrationRole",
+                                        "Arn"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "Roles": [
+                    {
+                        "Ref": "HeatShieldIntegrationRole"
+                    }
+                ]
+            }
+        }
+    },
+    "Parameters": {
+        "ExternalId": {
+            "Description": "External ID for securing the role - Do not change",
+            "Type": "String"
+        },
+        "CustomerId": {
+            "Description": "HeatShield Customer ID - Do not change",
+            "Type": "String"
+        }
+    }
+}
