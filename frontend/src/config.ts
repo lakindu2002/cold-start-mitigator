@@ -16,6 +16,11 @@ export const amplifyConfig: ResourcesConfig = {
       loginWith: {
         email: true,
       },
+      userAttributes: {
+        name: {
+          required: true,
+        },
+      },
     },
   },
 };
