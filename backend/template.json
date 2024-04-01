@@ -52,7 +52,9 @@
                             "Effect": "Allow",
                             "Action": [
                                 "lambda:UpdateFunctionConfiguration",
-                                "lambda:InvokeFunction"
+                                "lambda:InvokeFunction",
+                                "logs:FilterLogEvents",
+                                "lambda:ListFunctions"
                             ],
                             "Resource": "arn:aws:lambda:*:*:function:*"
                         },

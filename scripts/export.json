@@ -1,0 +1,238 @@
+{
+    "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d_1711867829195": {
+        "startupTime": 1711867829195,
+        "logsForThatCycle": [
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711867829195,
+                "message": "INIT_START Runtime Version: nodejs:16.v32\tRuntime Version ARN: arn:aws:lambda:us-east-1::runtime:4e246d1debfc59ff89a11f72d8d5e9b36dad2bdc84b41b34734298b703ddf614\n",
+                "ingestionTime": 1711867833823,
+                "eventId": "38175928272439437143100902502030592244443338886665404416"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711867829648,
+                "message": "START RequestId: 19d3c7f0-0141-5443-ba46-997308abaac3 Version: $LATEST\n",
+                "ingestionTime": 1711867833823,
+                "eventId": "38175928282541674718035274785146272621953046648874532865"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711867829920,
+                "message": "END RequestId: 19d3c7f0-0141-5443-ba46-997308abaac3\n",
+                "ingestionTime": 1711867833823,
+                "eventId": "38175928288607477412035604279643987992113400978501206021"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711867829920,
+                "message": "REPORT RequestId: 19d3c7f0-0141-5443-ba46-997308abaac3\tDuration: 271.61 ms\tBilled Duration: 272 ms\tMemory Size: 512 MB\tMax Memory Used: 86 MB\tInit Duration: 452.88 ms\t\n",
+                "ingestionTime": 1711867833823,
+                "eventId": "38175928288607477412035604279643987992113400978501206022"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711867889108,
+                "message": "START RequestId: 10761fb7-7f05-55aa-8b06-4134752686f1 Version: $LATEST\n",
+                "ingestionTime": 1711867898128,
+                "eventId": "38175929608543984222666126858599985259897289673614163968"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711867889245,
+                "message": "END RequestId: 10761fb7-7f05-55aa-8b06-4134752686f1\n",
+                "ingestionTime": 1711867898128,
+                "eventId": "38175929611599186314864822228990378663250115199933480964"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711867889245,
+                "message": "REPORT RequestId: 10761fb7-7f05-55aa-8b06-4134752686f1\tDuration: 137.17 ms\tBilled Duration: 138 ms\tMemory Size: 512 MB\tMax Memory Used: 88 MB\t\n",
+                "ingestionTime": 1711867898128,
+                "eventId": "38175929611599186314864822228990378663250115199933480965"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711867949097,
+                "message": "START RequestId: bed6d477-6925-5e78-9eb3-8af463497fd8 Version: $LATEST\n",
+                "ingestionTime": 1711867958114,
+                "eventId": "38175930946343387937319678568704433913931938459573485568"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711867949205,
+                "message": "END RequestId: bed6d477-6925-5e78-9eb3-8af463497fd8\n",
+                "ingestionTime": 1711867958114,
+                "eventId": "38175930948751868418760985867990291487377961502219370500"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711867949205,
+                "message": "REPORT RequestId: bed6d477-6925-5e78-9eb3-8af463497fd8\tDuration: 108.15 ms\tBilled Duration: 109 ms\tMemory Size: 512 MB\tMax Memory Used: 88 MB\t\n",
+                "ingestionTime": 1711867958114,
+                "eventId": "38175930948751868418760985867990291487377961502219370501"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711868009131,
+                "message": "START RequestId: 4721dc92-2bd6-5904-85e9-821121486358 Version: $LATEST\n",
+                "ingestionTime": 1711868018151,
+                "eventId": "38175932285146325185907108320240433019414838559322079232"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711868009160,
+                "message": "END RequestId: 4721dc92-2bd6-5904-85e9-821121486358\n",
+                "ingestionTime": 1711868018151,
+                "eventId": "38175932285793046796664496391344968849321641042995511300"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711868009160,
+                "message": "REPORT RequestId: 4721dc92-2bd6-5904-85e9-821121486358\tDuration: 29.04 ms\tBilled Duration: 30 ms\tMemory Size: 512 MB\tMax Memory Used: 88 MB\t\n",
+                "ingestionTime": 1711868018151,
+                "eventId": "38175932285793046796664496391344968849321641042995511301"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711868069115,
+                "message": "START RequestId: 62830e1c-1287-5374-9135-509f1851391f Version: $LATEST\n",
+                "ingestionTime": 1711868078134,
+                "eventId": "38175933622834225174568006914633681542615987473947361280"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711868069143,
+                "message": "END RequestId: 62830e1c-1287-5374-9135-509f1851391f\n",
+                "ingestionTime": 1711868078134,
+                "eventId": "38175933623458646040126864362596681654250141596114812932"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]60bea14a1b6042678725be2260d5578d",
+                "timestamp": 1711868069143,
+                "message": "REPORT RequestId: 62830e1c-1287-5374-9135-509f1851391f\tDuration: 27.37 ms\tBilled Duration: 28 ms\tMemory Size: 512 MB\tMax Memory Used: 88 MB\t\n",
+                "ingestionTime": 1711868078134,
+                "eventId": "38175933623458646040126864362596681654250141596114812933"
+            }
+        ],
+        "lastInvoked": 1711868069115
+    },
+    "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230_1711868729207": {
+        "startupTime": 1711868729207,
+        "logsForThatCycle": [
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868729207,
+                "message": "INIT_START Runtime Version: nodejs:16.v32\tRuntime Version ARN: arn:aws:lambda:us-east-1::runtime:4e246d1debfc59ff89a11f72d8d5e9b36dad2bdc84b41b34734298b703ddf614\n",
+                "ingestionTime": 1711868730344,
+                "eventId": "38175948343377724763044098445702891176791092998860505088"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868729696,
+                "message": "START RequestId: 11b72ee7-ed9d-5878-b4eb-7064e0f7d206 Version: $LATEST\n",
+                "ingestionTime": 1711868730344,
+                "eventId": "38175948354282789165125573161913857412116141775284928513"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868730006,
+                "message": "END RequestId: 11b72ee7-ed9d-5878-b4eb-7064e0f7d206\n",
+                "ingestionTime": 1711868730344,
+                "eventId": "38175948361196020176670066335789930076637133842138857477"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868730006,
+                "message": "REPORT RequestId: 11b72ee7-ed9d-5878-b4eb-7064e0f7d206\tDuration: 309.09 ms\tBilled Duration: 310 ms\tMemory Size: 512 MB\tMax Memory Used: 86 MB\tInit Duration: 488.73 ms\t\n",
+                "ingestionTime": 1711868730344,
+                "eventId": "38175948361196020176670066335789930076637133842138857478"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868789098,
+                "message": "START RequestId: bf79bd10-c3c1-5ea4-8d95-e393ce6b7042 Version: $LATEST\n",
+                "ingestionTime": 1711868798118,
+                "eventId": "38175949678991655448241649097352014022762992613753946112"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868789238,
+                "message": "END RequestId: bf79bd10-c3c1-5ea4-8d95-e393ce6b7042\n",
+                "ingestionTime": 1711868798118,
+                "eventId": "38175949682113759776035936337167014580933763224591204356"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868789238,
+                "message": "REPORT RequestId: bf79bd10-c3c1-5ea4-8d95-e393ce6b7042\tDuration: 140.49 ms\tBilled Duration: 141 ms\tMemory Size: 512 MB\tMax Memory Used: 88 MB\t\n",
+                "ingestionTime": 1711868798118,
+                "eventId": "38175949682113759776035936337167014580933763224591204357"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868849108,
+                "message": "START RequestId: 531dd7c4-0044-51ca-aba9-89470da1af2c Version: $LATEST\n",
+                "ingestionTime": 1711868858138,
+                "eventId": "38175951017259374812064343893469940571200477991211106304"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868849234,
+                "message": "END RequestId: 531dd7c4-0044-51ca-aba9-89470da1af2c\n",
+                "ingestionTime": 1711868858138,
+                "eventId": "38175951020069268707079202409303441073554171540964638724"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868849234,
+                "message": "REPORT RequestId: 531dd7c4-0044-51ca-aba9-89470da1af2c\tDuration: 126.62 ms\tBilled Duration: 127 ms\tMemory Size: 512 MB\tMax Memory Used: 88 MB\t\n",
+                "ingestionTime": 1711868858138,
+                "eventId": "38175951020069268707079202409303441073554171540964638725"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868909118,
+                "message": "START RequestId: 917f5b96-6d27-5597-9ea8-0515633a94f9 Version: $LATEST\n",
+                "ingestionTime": 1711868918141,
+                "eventId": "38175952355527094175887038689567853696742656611399827456"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868909157,
+                "message": "END RequestId: 917f5b96-6d27-5597-9ea8-0515633a94f9\n",
+                "ingestionTime": 1711868918141,
+                "eventId": "38175952356396823238629732992087746709375942710133063684"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868909157,
+                "message": "REPORT RequestId: 917f5b96-6d27-5597-9ea8-0515633a94f9\tDuration: 38.84 ms\tBilled Duration: 39 ms\tMemory Size: 512 MB\tMax Memory Used: 88 MB\t\n",
+                "ingestionTime": 1711868918141,
+                "eventId": "38175952356396823238629732992087746709375942710133063685"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868969103,
+                "message": "START RequestId: ea5a0979-2bc7-5733-819b-57fa25984f4c Version: $LATEST\n",
+                "ingestionTime": 1711868978123,
+                "eventId": "38175953693237294909746467907101465697083824163921395712"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868969136,
+                "message": "END RequestId: ea5a0979-2bc7-5733-819b-57fa25984f4c\n",
+                "ingestionTime": 1711868978123,
+                "eventId": "38175953693973219501297978470772144400081220093618749444"
+            },
+            {
+                "logStreamName": "2024/03/31/[$LATEST]38c18f09c14644b3a1422ff8f3f16230",
+                "timestamp": 1711868969136,
+                "message": "REPORT RequestId: ea5a0979-2bc7-5733-819b-57fa25984f4c\tDuration: 32.79 ms\tBilled Duration: 33 ms\tMemory Size: 512 MB\tMax Memory Used: 88 MB\t\n",
+                "ingestionTime": 1711868978123,
+                "eventId": "38175953693973219501297978470772144400081220093618749445"
+            }
+        ],
+        "lastInvoked": 1711868969103
+    }
+}

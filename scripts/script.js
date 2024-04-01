@@ -1,75 +1,69 @@
 const AWS = require('aws-sdk');
+const fs = require('fs');
+const { maxBy } = require('lodash');
 
-async function getAllLambdaLogs() {
-    const sts = new AWS.STS();
-    const roleName = 'Sample-HeatShieldIntegrationRole-rlXuDtxuD25i'; // Replace with your role name
-    const externalId = 'Sample'; // Replace with your external ID
+const isRelevantLog = (message) => {
+    return message.includes('INIT_START') || message.includes('START RequestId:') || message.includes('END RequestId:') || message.includes('REPORT RequestId:');
+};
 
-    // Assume role
-    const assumeRoleParams = {
-        RoleArn: `arn:aws:iam::932055394976:role/${roleName}`,
-        RoleSessionName: 'YourSessionName',
-        ExternalId: externalId,
-    };
+// Function to determine if a log entry is an INIT_START event
+const isInitStart = (message) => message.includes('INIT_START');
 
-    try {
-        const assumeRoleResponse = await sts.assumeRole(assumeRoleParams).promise();
+// Function to create a unique identifier for each cycle
+const createCycleKey = (log) => `${log.logStreamName}_${log.timestamp}`;
 
-        AWS.config.update({
-            credentials: {
-                accessKeyId: assumeRoleResponse.Credentials.AccessKeyId,
-                secretAccessKey: assumeRoleResponse.Credentials.SecretAccessKey,
-                sessionToken: assumeRoleResponse.Credentials.SessionToken
-            },
-            region: 'us-east-1', // Replace with your preferred region
-        });
+// Grouping logs including INIT_START
+const groupLogsIncludingInitStart = (logs) => {
+    const cycles = {};
+    let currentCycleKey = null;
 
-        // Create Lambda client with temporary credentials and region
-        const lambda = new AWS.Lambda();
-
-        // List all regions
-        const ec2 = new AWS.EC2();
-        const regions = await ec2.describeRegions().promise();
-        const regionNames = regions.Regions.map(region => region.RegionName);
-
-        const functions = await lambda.listFunctions().promise();
-
-        // Fetch CloudWatch logs for each Lambda function in each region
-        for (const region of regionNames) {
-            try {
-                const regionScopedFunctions = functions.Functions.filter((lambdaFunction) => lambdaFunction.FunctionArn.includes(region));
-                console.log(regionScopedFunctions.length);
-
-                // Create CloudWatchLogs client with temporary credentials and region
-                const cloudWatchLogs = new AWS.CloudWatchLogs({
-                    credentials: {
-                        accessKeyId: assumeRoleResponse.Credentials.AccessKeyId,
-                        secretAccessKey: assumeRoleResponse.Credentials.SecretAccessKey,
-                        sessionToken: assumeRoleResponse.Credentials.SessionToken
-                    },
-                    region: region,
-                });
-
-                for (const lambdaFunction of regionScopedFunctions) {
-                    const logGroupName = `/aws/lambda/${lambdaFunction.FunctionName}`;
-
-                    const logs = await cloudWatchLogs.filterLogEvents({
-                        logGroupName,
-                        startTime: new Date() - 60 * 60 * 1000, // Fetch logs for the last 1 hour
-                    }).promise();
-
-                    console.log(`Logs for Lambda function ${lambdaFunction.FunctionName} in region ${region}:`);
-                    console.log(logs.events);
-                }
-            } catch (listFunctionsError) {
-                console.error('Error listing functions:', listFunctionsError);
+    logs.forEach(log => {
+        // Check if the log is an INIT_START event to start a new cycle
+        if (isInitStart(log.message)) {
+            currentCycleKey = createCycleKey(log);
+            if (!cycles[currentCycleKey]) {
+                cycles[currentCycleKey] = { startupTime: log.timestamp, logsForThatCycle: [] };
             }
         }
 
-    } catch (err) {
-        console.error('Error assuming role or fetching logs:', err);
-    }
+        if (isRelevantLog(log.message) && currentCycleKey) {
+            // Add the log to the current cycle
+            cycles[currentCycleKey].logsForThatCycle.push(log);
+        }
+    });
+
+    return cycles;
+};
+
+// Utility function to add "lastRequestAt" key with the last timestamp
+function addLastRequestAtKey(logs) {
+    const duplicateLogs = { ...logs };
+    Object.entries(logs).forEach(([key, value]) => {
+        const largestTimestampLog = Math.max(...value.logsForThatCycle.filter((log) => log.message.startsWith('START')).map(log => log.timestamp));
+        duplicateLogs[key] = {
+            ...value,
+            lastInvoked: largestTimestampLog
+        }
+    })
+    return duplicateLogs;
 }
+
+async function getAllLambdaLogs() {
+    // Create CloudWatchLogs client with temporary credentials and region
+    const cloudWatchLogs = new AWS.CloudWatchLogs({ region: 'us-east-1' });
+
+    const logGroupName = `/aws/lambda/hs-dev-collect-aws-data-dd77035`;
+
+    const logs = await cloudWatchLogs.filterLogEvents({
+        logGroupName,
+        startTime: new Date() - 60 * 60 * 1000, // Fetch logs for the last 1 hour
+    }).promise();
+    const groupedLogs = addLastRequestAtKey(groupLogsIncludingInitStart(logs.events));
+    const json = JSON.stringify(groupedLogs);
+
+    fs.writeFileSync('export.json', json)
+}
+
 
 // Call the function
 getAllLambdaLogs();

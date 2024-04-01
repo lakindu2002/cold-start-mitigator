@@ -7,12 +7,14 @@ import {
   SuccessTrue,
   SuccessWithData,
 } from "../helpers/response-helpers";
-import { ProjectTable } from "../../dynamodb";
-import { Project } from "../../types";
+import { ProjectTable, ProjectUserTable } from "../../dynamodb";
+import { Project, ProjectUser } from "../../types";
 import { roleCreationCloudFormationStackObjectUrl } from "../../s3";
 import { createDefinedUUID } from "../helpers/nano-id-helpers";
 import { Parse } from "../helpers/event-helpers";
-import { integrateWithRole } from "./util";
+import { integrateWithRole } from "../../utils/integrate-with-role";
+import { ManagedPolicy } from "@pulumi/aws/iam";
+import { ProjectUserRole } from "../../types/project-user";
 
 const stage = pulumi.getStack();
 
@@ -24,9 +26,9 @@ export const redirectClientToRoleCreation = new aws.lambda.CallbackFunction(
       event: awsx.classic.apigateway.Request
     ): Promise<awsx.classic.apigateway.Response> => {
       const pe = Parse(event);
-      const { pathParams } = pe;
-      const { projectId } = pathParams;
-
+      const { body, email, name: fullName, userId } = pe;
+      const { name } = body as { name: string };
+      const projectId = createDefinedUUID(10);
       const customerId = createDefinedUUID(10);
       const externalId = createDefinedUUID(30);
       const stackCreationRegion = "us-east-1";
@@ -34,26 +36,50 @@ export const redirectClientToRoleCreation = new aws.lambda.CallbackFunction(
 
       const dynamodb = new awsSdk.DynamoDB.DocumentClient();
 
+      const projectUser: ProjectUser = {
+        createdAt: Date.now(),
+        email,
+        fullName,
+        projectId,
+        role: ProjectUserRole.SUPER_ADMINISTRATOR,
+        updatedAt: Date.now(),
+        userId,
+      };
+
       await dynamodb
-        .update({
-          Key: { id: projectId },
-          TableName: ProjectTable.name.get(),
-          UpdateExpression:
-            "SET #customerId = :customerId, #externalId = :externalId",
-          ExpressionAttributeNames: {
-            "#customerId": "customerId",
-            "#externalId": "externalId",
-          },
-          ExpressionAttributeValues: {
-            ":customerId": customerId,
-            ":externalId": externalId,
-          },
+        .transactWrite({
+          TransactItems: [
+            {
+              Update: {
+                Key: { id: projectId },
+                TableName: ProjectTable.name.get(),
+                UpdateExpression:
+                  "SET #customerId = :customerId, #externalId = :externalId, #name = :name",
+                ExpressionAttributeNames: {
+                  "#customerId": "customerId",
+                  "#externalId": "externalId",
+                  "#name": "name",
+                },
+                ExpressionAttributeValues: {
+                  ":customerId": customerId,
+                  ":externalId": externalId,
+                  ":name": name.trim(),
+                },
+              },
+            },
+            {
+              Put: {
+                Item: projectUser,
+                TableName: ProjectUserTable.name.get(),
+              },
+            },
+          ],
         })
         .promise();
 
-      const redirectUrl = `https://${stackCreationRegion}.console.aws.amazon.com/cloudformation/home?region=${stackCreationRegion}#/stacks/quickcreate?stackName=${stackName}&templateURL=${roleCreationCloudFormationStackObjectUrl}&param_ExternalId=${externalId}&param_CustomerId=${customerId}`;
+      const redirectUrl = `https://${stackCreationRegion}.console.aws.amazon.com/cloudformation/home?region=${stackCreationRegion}#/stacks/quickcreate?stackName=${stackName}&templateURL=${roleCreationCloudFormationStackObjectUrl.get()}&param_ExternalId=${externalId}&param_CustomerId=${customerId}`;
 
-      return SuccessWithData({ stackCreationUrl: redirectUrl });
+      return SuccessWithData({ stackCreationUrl: redirectUrl, projectId });
     },
   }
 );
@@ -61,6 +87,35 @@ export const redirectClientToRoleCreation = new aws.lambda.CallbackFunction(
 export const testIntegration = new aws.lambda.CallbackFunction(
   `${stage}-test-integration`,
   {
+    role: new aws.iam.Role(`${stage}-test-integration-role`, {
+      assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
+        Service: "lambda.amazonaws.com",
+      }),
+      managedPolicyArns: [
+        ManagedPolicy.AWSXrayFullAccess,
+        ManagedPolicy.LambdaFullAccess,
+        ManagedPolicy.AmazonDynamoDBFullAccess,
+        ManagedPolicy.AWSXrayFullAccess,
+        ManagedPolicy.CloudWatchEventsFullAccess,
+        ManagedPolicy.AWSLambdaBasicExecutionRole,
+      ],
+      inlinePolicies: [
+        {
+          name: "sts-assume-role",
+          policy: JSON.stringify({
+            Version: "2012-10-17",
+            Statement: [
+              {
+                Sid: "allowStsAssumeRole",
+                Effect: "Allow",
+                Action: ["sts:AssumeRole"],
+                Resource: "*",
+              },
+            ],
+          }),
+        },
+      ],
+    }),
     memorySize: 2048,
     callback: async (
       event: awsx.classic.apigateway.Request
