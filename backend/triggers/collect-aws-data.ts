@@ -3,7 +3,11 @@ import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { Project, ProjectFunction, ProjectFunctionLog } from "../types";
 import { integrateWithRole } from "../utils/integrate-with-role";
-import { ProjectFunctionLogs, ProjectFunctions } from "../dynamodb";
+import {
+  ProjectFunctionLogs,
+  ProjectFunctions,
+  ProjectTable,
+} from "../dynamodb";
 import { ManagedPolicy } from "@pulumi/aws/iam";
 import { groupLogsThroughInitPeriod } from "../utils/log-collection";
 import { createDefinedUUID } from "../api/helpers/nano-id-helpers";
@@ -91,6 +95,7 @@ export const collectAwsData = new aws.lambda.CallbackFunction(
               .query({
                 TableName: ProjectFunctions.name.get(),
                 KeyConditionExpression: "#projectId = :id AND #name = :name",
+                IndexName: "by-function-name-project",
                 Limit: 1,
                 ExpressionAttributeNames: {
                   "#projectId": "projectId",
@@ -133,6 +138,20 @@ export const collectAwsData = new aws.lambda.CallbackFunction(
           });
 
           await Promise.all(inserts);
+
+          await dynamodb
+            .update({
+              TableName: ProjectTable.name.get(),
+              Key: { id },
+              UpdateExpression: "SET #functionCount = :functionCount",
+              ExpressionAttributeNames: {
+                "#functionCount": "functionCount",
+              },
+              ExpressionAttributeValues: {
+                ":functionCount": filteredFunctions.length,
+              },
+            })
+            .promise();
 
           const cloudWatchLogs = new awsSdk.CloudWatchLogs({
             credentials: {

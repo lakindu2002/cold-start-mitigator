@@ -21,4 +21,9 @@ export interface Project {
    * the aws region to collect logs from
    */
   region?: string;
+
+  /**
+   * show the functions collected
+   */
+  functionCount?: number;
 }
