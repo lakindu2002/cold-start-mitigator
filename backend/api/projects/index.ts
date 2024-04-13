@@ -2,9 +2,10 @@ import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as awsSdk from "aws-sdk";
 import * as awsx from "@pulumi/awsx";
-import { SuccessTrue } from "../helpers/response-helpers";
+import { SuccessTrue, SuccessWithData } from "../helpers/response-helpers";
 import { Parse } from "../helpers/event-helpers";
 import { ProjectTable } from "../../dynamodb";
+import { Project } from "../../types";
 
 const stage = pulumi.getStack();
 
@@ -71,6 +72,41 @@ export const updateProject = new aws.lambda.CallbackFunction(
         .promise();
 
       return SuccessTrue();
+    },
+  }
+);
+
+export const getProjectById = new aws.lambda.CallbackFunction(
+  `${stage}-get-project-by-id`,
+  {
+    memorySize: 1024,
+    callback: async (
+      event: awsx.classic.apigateway.Request
+    ): Promise<awsx.classic.apigateway.Response> => {
+      const { pathParams } = Parse(event);
+      const { projectId } = pathParams;
+
+      const dynamo = new awsSdk.DynamoDB.DocumentClient();
+      const { Item: ProjectItem } = (await dynamo
+        .get({
+          TableName: ProjectTable.name.get(),
+          Key: { id: projectId },
+        })
+        .promise()) as unknown as { Item: Project };
+
+      const projectDto = {
+        id: ProjectItem.id,
+        createdAt: ProjectItem.createdAt,
+        updatedAt: ProjectItem.updatedAt,
+        frequency: ProjectItem.frequency,
+        patterns: ProjectItem.patterns,
+        region: ProjectItem.region,
+        role: ProjectItem.roleArn,
+        functionCount: ProjectItem.functionCount,
+        name: ProjectItem.name,
+      };
+
+      return SuccessWithData({ project: projectDto });
     },
   }
 );

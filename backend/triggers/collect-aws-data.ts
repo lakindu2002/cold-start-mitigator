@@ -1,16 +1,12 @@
 import * as awsSdk from "aws-sdk";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { Project, ProjectFunction, ProjectFunctionLog } from "../types";
+import { Project, ProjectFunction } from "../types";
 import { integrateWithRole } from "../utils/integrate-with-role";
-import {
-  ProjectFunctionLogs,
-  ProjectFunctions,
-  ProjectTable,
-} from "../dynamodb";
+import { ProjectFunctions, ProjectTable } from "../dynamodb";
 import { ManagedPolicy } from "@pulumi/aws/iam";
-import { groupLogsThroughInitPeriod } from "../utils/log-collection";
 import { createDefinedUUID } from "../api/helpers/nano-id-helpers";
+import { Queues } from "../sqs";
 
 const stage = pulumi.getStack();
 
@@ -23,16 +19,12 @@ const stage = pulumi.getStack();
 export const collectAwsData = new aws.lambda.CallbackFunction(
   `${stage}-collect-aws-data`,
   {
+    timeout: 300,
     callback: async (event: aws.sqs.QueueEvent) => {
       await Promise.all(
         event.Records.map(async (record) => {
-          const {
-            externalId,
-            id,
-            roleArn,
-            patterns = [],
-            region,
-          } = JSON.parse(record.body).project as Project;
+          const project = JSON.parse(record.body).project as Project;
+          const { externalId, id, roleArn, patterns = [], region } = project;
 
           const resp = await integrateWithRole(
             roleArn,
@@ -139,6 +131,10 @@ export const collectAwsData = new aws.lambda.CallbackFunction(
 
           await Promise.all(inserts);
 
+          console.log(
+            `Inserted ${filteredFunctions.length} functions for project ${id}`
+          );
+
           await dynamodb
             .update({
               TableName: ProjectTable.name.get(),
@@ -153,85 +149,27 @@ export const collectAwsData = new aws.lambda.CallbackFunction(
             })
             .promise();
 
-          const cloudWatchLogs = new awsSdk.CloudWatchLogs({
-            credentials: {
-              accessKeyId: AccessKeyId,
-              secretAccessKey: SecretAccessKey,
-              sessionToken: SessionToken,
-            },
-            region,
-          });
+          console.log(
+            `Updated function count for project ${id} to ${filteredFunctions.length}`
+          );
 
+          // Collect logs for each function
+          const sqs = new awsSdk.SQS();
           const logEvents = filteredFunctions.map(async (eachFunction) => {
             const { FunctionName, Runtime, FunctionArn } = eachFunction;
-            const logGroupName = `/aws/lambda/${FunctionName}`;
-            console.log(`Fetching Logs For: ${logGroupName}`);
-
-            const { Items: functionLogsInDb = [] } = await dynamodb
-              .query({
-                TableName: ProjectFunctionLogs.name.get(),
-                KeyConditionExpression: "#projectIdfunctionName = :projectId",
-                IndexName: "by-project-id-invoked-at",
-                ExpressionAttributeNames: {
-                  "#projectIdfunctionName": "projectIdfunctionName",
-                },
-                ExpressionAttributeValues: {
-                  ":projectId": `${id}#${FunctionName}`,
-                },
-                ScanIndexForward: false,
-                Limit: 1,
+            await sqs
+              .sendMessage({
+                QueueUrl: Queues.logCollectionQueue.url.get(),
+                MessageBody: JSON.stringify({
+                  functionName: FunctionName,
+                  runtime: Runtime,
+                  functionArn: FunctionArn,
+                  project,
+                }),
               })
               .promise();
 
-            let startTime;
-
-            if (functionLogsInDb.length > 0) {
-              startTime = (
-                functionLogsInDb[0] as ProjectFunctionLog
-              ).lastInvokedAt.split("#")[1] as unknown as number;
-            }
-            try {
-              const logs = await cloudWatchLogs
-                .filterLogEvents({
-                  logGroupName,
-                  startTime,
-                })
-                .promise();
-
-              const logsByInitStream = groupLogsThroughInitPeriod(
-                logs.events || []
-              );
-
-              Object.entries(logsByInitStream).map(
-                async ([streamName, logs]) => {
-                  const functionLog: ProjectFunctionLog = {
-                    id: createDefinedUUID(12),
-                    projectId: id,
-                    lastInvokedAt: `${id}#${logs.lastInvoked as number}`,
-                    startUpTime: logs.startupTime,
-                    cycleLogs: logs.logsForThatCycle,
-                    functionName: FunctionName as string,
-                    runtime: Runtime as string,
-                    functionArn: FunctionArn as string,
-                    streamName,
-                    projectIdfunctionName: `${id}#${FunctionName}`,
-                  };
-
-                  await dynamodb
-                    .put({
-                      Item: functionLog,
-                      TableName: ProjectFunctionLogs.name.get(),
-                    })
-                    .promise();
-                }
-              );
-            } catch (err) {
-              if ((err as any)?.code === "ResourceNotFoundException") {
-                console.log("Function not yet invoked");
-                return;
-              }
-              throw new Error((err as any)?.message);
-            }
+            console.log(`Queued log collection for ${FunctionName}`);
           });
 
           await Promise.all(logEvents);
@@ -239,7 +177,6 @@ export const collectAwsData = new aws.lambda.CallbackFunction(
       );
     },
 
-    timeout: 60,
     memorySize: 2048,
     role: new aws.iam.Role(`${stage}-collect-aws-data-role`, {
       assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
@@ -272,6 +209,7 @@ export const collectAwsData = new aws.lambda.CallbackFunction(
                   "sqs:ReceiveMessage",
                   "sqs:DeleteMessage",
                   "sqs:GetQueueAttributes",
+                  "sqs:SendMessage",
                 ],
                 Resource: "*",
               },

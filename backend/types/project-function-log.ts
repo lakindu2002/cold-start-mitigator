@@ -10,5 +10,6 @@ export interface ProjectFunctionLog {
   functionArn: string;
   projectId: string;
   streamName: string;
+  isCold: boolean;
   projectIdfunctionName: string;
 }

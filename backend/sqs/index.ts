@@ -11,7 +11,7 @@ const globalScheduleProcessingQueue = new aws.sqs.Queue(
   `${stage}-global-schedule-processing-queue`,
   {
     delaySeconds: 5,
-    visibilityTimeoutSeconds: 60,
+    visibilityTimeoutSeconds: 300,
     redrivePolicy: deadLetterQueue.arn.apply((arn) =>
       JSON.stringify({
         maxReceiveCount: 5, // if consumer fails to process message 5 times, move to DLQ and remove from client
@@ -21,6 +21,18 @@ const globalScheduleProcessingQueue = new aws.sqs.Queue(
   }
 );
 
+const logCollectionQueue = new aws.sqs.Queue(`${stage}-log-collection-queue`, {
+  delaySeconds: 5,
+  visibilityTimeoutSeconds: 300,
+  redrivePolicy: deadLetterQueue.arn.apply((arn) =>
+    JSON.stringify({
+      maxReceiveCount: 5, // if consumer fails to process message 5 times, move to DLQ and remove from client
+      deadLetterTargetArn: arn,
+    })
+  ),
+});
+
 export const Queues = {
   globalScheduleProcessingQueue,
+  logCollectionQueue,
 };

@@ -9,9 +9,13 @@ import {
 } from "./dynamodb";
 import { output } from "./cognito";
 import { Queues } from "./sqs";
-import { collectAwsData } from "./triggers";
+import { collectAwsData, logCollectionLambda } from "./triggers";
 
 Queues.globalScheduleProcessingQueue.onEvent("onPush", collectAwsData, {
+  batchSize: 1,
+});
+
+Queues.logCollectionQueue.onEvent("onLogCollectPush", logCollectionLambda, {
   batchSize: 1,
 });
 

@@ -30,6 +30,12 @@ export const api = new awsx.classic.apigateway.API(`${stage}-api-gateway`, {
       authorizers: output.cognitoAuthorizer,
     },
     {
+      path: "/projects/{projectId}",
+      method: "GET",
+      eventHandler: projects.getProjectById,
+      authorizers: output.cognitoAuthorizer,
+    },
+    {
       path: "/projects/{projectId}/integration/ping",
       method: "POST",
       eventHandler: integrations.testIntegration,
