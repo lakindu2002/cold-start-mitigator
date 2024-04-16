@@ -10,7 +10,7 @@ import {
   groupLogs,
   processLogMessageBasedOnType,
 } from "../utils/log-collection";
-import { ProjectFunctionLogs } from "../dynamodb";
+import { ProjectFunctionLogs, ProjectTable } from "../dynamodb";
 import { createDefinedUUID } from "../api/helpers/nano-id-helpers";
 
 const stage = pulumi.getStack();
@@ -49,7 +49,7 @@ export const logCollectionLambda = new aws.lambda.CallbackFunction(
           .query({
             TableName: ProjectFunctionLogs.name.get(),
             KeyConditionExpression: "#projectIdfunctionName = :projectId",
-            IndexName: "by-project-id-invoked-at",
+            IndexName: "by-project-id-function-name-invoked-at",
             ExpressionAttributeNames: {
               "#projectIdfunctionName": "projectIdfunctionName",
             },
@@ -136,6 +136,22 @@ export const logCollectionLambda = new aws.lambda.CallbackFunction(
         });
 
         await Promise.all(entries);
+
+        await dynamodb
+          .update({
+            TableName: ProjectTable.name.get(),
+            Key: { id },
+            UpdateExpression:
+              "SET #logCollectedCount = if_not_exists(#logCollectedCount, :zero) + :one",
+            ExpressionAttributeNames: {
+              "#logCollectedCount": "logCollectedCount",
+            },
+            ExpressionAttributeValues: {
+              ":zero": 0,
+              ":one": 1,
+            },
+          })
+          .promise();
 
         console.log(
           `Logs for function ${functionName}: ${groupedLogsPerInvocation.length} logs`

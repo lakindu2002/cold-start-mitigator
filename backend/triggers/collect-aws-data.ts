@@ -139,12 +139,15 @@ export const collectAwsData = new aws.lambda.CallbackFunction(
             .update({
               TableName: ProjectTable.name.get(),
               Key: { id },
-              UpdateExpression: "SET #functionCount = :functionCount",
+              UpdateExpression:
+                "SET #functionCount = :functionCount, #logCollectedCount = :zero",
               ExpressionAttributeNames: {
                 "#functionCount": "functionCount",
+                "#logCollectedCount": "logCollectedCount",
               },
               ExpressionAttributeValues: {
                 ":functionCount": filteredFunctions.length,
+                ":zero": 0,
               },
             })
             .promise();
@@ -173,6 +176,23 @@ export const collectAwsData = new aws.lambda.CallbackFunction(
           });
 
           await Promise.all(logEvents);
+
+          const sagemaker = new awsSdk.SageMaker();
+          // create a training job that uses a custom python file
+
+          // const trainingJob = await sagemaker
+          //   .createTrainingJob({
+          //     TrainingJobName: "my-training-job",
+          //     AlgorithmSpecification:{
+          //       TrainingInputMode: "File",
+          //     }
+          //     HyperParameters: {
+          //       epochs: "10",
+          //       learning_rate: "0.01",
+          //       batch_size: "100",
+          //     },
+          //   })
+          //   .promise();
         })
       );
     },

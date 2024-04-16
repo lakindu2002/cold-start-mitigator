@@ -26,4 +26,9 @@ export interface Project {
    * show the functions collected
    */
   functionCount?: number;
+
+  /**
+   * the number of functions logs have been collected for.
+   */
+  logCollectedCount?: number;
 }

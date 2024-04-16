@@ -8,6 +8,7 @@ export const ProjectFunctionLogs = new aws.dynamodb.Table(
   {
     attributes: [
       { name: "id", type: "S" },
+      { name: "projectId", type: "S" },
       { name: "lastInvokedAt", type: "S" },
       { name: "projectIdfunctionName", type: "S" },
     ],
@@ -18,8 +19,14 @@ export const ProjectFunctionLogs = new aws.dynamodb.Table(
     tableClass: "STANDARD",
     globalSecondaryIndexes: [
       {
-        name: "by-project-id-invoked-at",
+        name: "by-project-id-function-name-invoked-at",
         hashKey: "projectIdfunctionName",
+        rangeKey: "lastInvokedAt",
+        projectionType: "ALL",
+      },
+      {
+        name: "by-project-id-invoked-at",
+        hashKey: "projectId",
         rangeKey: "lastInvokedAt",
         projectionType: "ALL",
       },
