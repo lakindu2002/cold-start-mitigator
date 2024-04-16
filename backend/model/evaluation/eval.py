@@ -127,8 +127,6 @@ def preprocess_data(data, scaler, function_dummies, function_name_to_predict):
 
 def handler(event, context):
 
-    print(event)
-
     project_id = event["projectId"]
     function_name = event["functionName"]
 
@@ -139,26 +137,17 @@ def handler(event, context):
     s3 = boto3.client("s3")
     response = s3.list_objects_v2(Bucket=bucket_name, Prefix=bucket_path)
 
-    print("fetch 1", response)
-
     # get the latest model file
     contents = response.get("Contents", [])
-    print("fetch 2", contents)
 
     latest_model_file_path = contents[0]["Key"]
-
-    print("path", latest_model_file_path)
 
     # download the model file
     s3.download_file(bucket_name, latest_model_file_path, "/tmp/model.tar.gz")
 
-    print("downloaded")
-
     # extract the model file
     with tarfile.open("/tmp/model.tar.gz", "r:gz") as tar:
         tar.extractall("/tmp")
-
-    print("extracted")
 
     # extracted files - model.h5, scaler.pkl, function_dummies.pkl
     model = models.load_model("/tmp/model.h5")

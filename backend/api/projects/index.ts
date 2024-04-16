@@ -110,3 +110,71 @@ export const getProjectById = new aws.lambda.CallbackFunction(
     },
   }
 );
+
+// Create a role and attach the AWSLambdaBasicExecutionRole policy
+const predictNextInvocationRole = new aws.iam.Role(
+  `${stage}-predict-next-invocation-role`,
+  {
+    assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
+      Service: "lambda.amazonaws.com",
+    }),
+  }
+);
+
+new aws.iam.RolePolicyAttachment(
+  `${stage}-predict-next-invocation-assign-basic-execution-role`,
+  {
+    role: predictNextInvocationRole,
+    policyArn: aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole,
+  }
+);
+
+new aws.iam.RolePolicyAttachment(`${stage}-assign-s3-read`, {
+  role: predictNextInvocationRole,
+  policyArn: aws.iam.ManagedPolicy.AmazonS3ReadOnlyAccess,
+});
+
+new aws.iam.RolePolicyAttachment(`${stage}-assign-dynamodb-read`, {
+  role: predictNextInvocationRole,
+  policyArn: aws.iam.ManagedPolicy.AmazonDynamoDBReadOnlyAccess,
+});
+
+// Create a Lambda function using the Docker image
+const predictNextInvocation = new aws.lambda.Function(
+  `${stage}-predict-next-invocation`,
+  {
+    packageType: "Image",
+    imageUri:
+      // Image hosted on Heat Shield's ECR
+      "932055394976.dkr.ecr.us-east-1.amazonaws.com/heat-shield-evaluate@sha256:9c00a7e2858763c9f14c80d252735c0d3414dd4de08083a0cddb4c18500a0d20",
+    role: predictNextInvocationRole.arn,
+    timeout: 50,
+    memorySize: 10239,
+  }
+);
+
+export const predictNextInvocationHandler = new aws.lambda.CallbackFunction(
+  `${stage}-predict-next-invocation-handler`,
+  {
+    memorySize: 1024,
+    timeout: 30,
+    callback: async (
+      event: awsx.classic.apigateway.Request
+    ): Promise<awsx.classic.apigateway.Response> => {
+      const { pathParams, body } = Parse(event);
+      const { projectId } = pathParams;
+      const { functionName } = body as { functionName: string };
+
+      const lambda = new awsSdk.Lambda();
+
+      const resp = await lambda
+        .invoke({
+          FunctionName: predictNextInvocation.arn.get(),
+          Payload: JSON.stringify({ projectId, functionName }),
+        })
+        .promise();
+
+      return SuccessWithData({ resp });
+    },
+  }
+);

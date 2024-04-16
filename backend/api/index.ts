@@ -41,6 +41,12 @@ export const api = new awsx.classic.apigateway.API(`${stage}-api-gateway`, {
       eventHandler: integrations.testIntegration,
       authorizers: output.cognitoAuthorizer,
     },
+    {
+      path: "/projects/{projectId}/functions/predict",
+      method: "POST",
+      eventHandler: projects.predictNextInvocationHandler,
+      authorizers: output.cognitoAuthorizer,
+    },
   ],
   restApiArgs: {
     binaryMediaTypes: [],
