@@ -4,8 +4,8 @@ import * as awsSdk from "aws-sdk";
 import * as awsx from "@pulumi/awsx";
 import { SuccessTrue, SuccessWithData } from "../helpers/response-helpers";
 import { Parse } from "../helpers/event-helpers";
-import { ProjectTable } from "../../dynamodb";
-import { Project } from "../../types";
+import { ProjectFunctionLogs, ProjectTable } from "../../dynamodb";
+import { Project, ProjectFunctionLog } from "../../types";
 
 const stage = pulumi.getStack();
 
@@ -94,6 +94,80 @@ export const getProjectById = new aws.lambda.CallbackFunction(
         })
         .promise()) as unknown as { Item: Project };
 
+      // get project logs and get count of logs collected
+      const logs: ProjectFunctionLog[] = [];
+      let logsNextKey: any = undefined;
+
+      do {
+        const { LastEvaluatedKey: logKey, Items: newLogs = [] } = await dynamo
+          .query({
+            TableName: ProjectFunctionLogs.name.get(),
+            IndexName: "by-project-id-invoked-at",
+            KeyConditionExpression: "#projectId = :projectId",
+            ExpressionAttributeNames: {
+              "#projectId": "projectId",
+            },
+            ExpressionAttributeValues: {
+              ":projectId": projectId,
+            },
+            ExclusiveStartKey: logsNextKey,
+          })
+          .promise();
+
+        logs.push(...(newLogs as ProjectFunctionLog[]));
+        logsNextKey = logKey;
+      } while (logsNextKey);
+
+      const coldStartLogs = logs.filter((log) => log.isCold);
+
+      // filter invocations happened in the last week
+      const lastWeek = new Date();
+      lastWeek.setDate(lastWeek.getDate() - 7);
+
+      const lastWeekLogs = logs.filter(
+        (log) => new Date(log.startUpTime) > lastWeek
+      );
+
+      // for each day, get count of logs for each function
+      const logsByDay = lastWeekLogs.reduce((acc, log) => {
+        const date = new Date(log.startUpTime).toDateString();
+        if ((acc as any)[date]) {
+          (acc as any)[date] = {
+            ...(acc as any)[date],
+            [log.functionName]: (acc as any)[date][log.functionName]
+              ? (acc as any)[date][log.functionName] + 1
+              : 1,
+          };
+        } else {
+          (acc as any)[date] = {
+            [log.functionName]: 1,
+          };
+        }
+        return acc;
+      }, {});
+
+      let functionsWithMostColdStarts = coldStartLogs.reduce((acc, log) => {
+        if (acc[log.functionName]) {
+          acc[log.functionName] += 1;
+        } else {
+          acc[log.functionName] = 1;
+        }
+        return acc;
+      }, {} as { [key: string]: number });
+
+      // sort functionsWithMostColdStarts by value
+      functionsWithMostColdStarts = Object.entries(functionsWithMostColdStarts)
+        .sort(([, a], [, b]) => b - a)
+        .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
+
+      // delete entries after 5th key in functionsWithMostColdStarts
+      const keys = Object.keys(functionsWithMostColdStarts);
+      if (keys.length > 5) {
+        keys.slice(5).forEach((key) => {
+          delete functionsWithMostColdStarts[key];
+        });
+      }
+
       const projectDto = {
         id: ProjectItem.id,
         createdAt: ProjectItem.createdAt,
@@ -103,7 +177,11 @@ export const getProjectById = new aws.lambda.CallbackFunction(
         region: ProjectItem.region,
         role: ProjectItem.roleArn,
         functionCount: ProjectItem.functionCount,
+        logCount: logs.length,
         name: ProjectItem.name,
+        coldStartEvents: coldStartLogs.length,
+        logsByDay,
+        functionsWithMostColdStarts,
       };
 
       return SuccessWithData({ project: projectDto });

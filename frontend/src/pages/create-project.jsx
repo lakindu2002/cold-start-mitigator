@@ -4,7 +4,7 @@ import { CreateProjectView } from 'src/sections/create-project';
 
 // ----------------------------------------------------------------------
 
-export default function ConfirmAccountPage() {
+export default function CreateProjectPage() {
   return (
     <>
       <Helmet>

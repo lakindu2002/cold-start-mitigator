@@ -9,11 +9,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
-const account = {
-  photoURL: '',
-  role: '',
-  displayName: '',
-};
+import { useAuth } from 'src/contexts/auth-context';
 
 // ----------------------------------------------------------------------
 
@@ -36,6 +32,7 @@ const MENU_OPTIONS = [
 
 export default function AccountPopover() {
   const [open, setOpen] = useState(null);
+  const { user, logout } = useAuth();
 
   const handleOpen = (event) => {
     setOpen(event.currentTarget);
@@ -43,6 +40,10 @@ export default function AccountPopover() {
 
   const handleClose = () => {
     setOpen(null);
+  };
+
+  const handleLogoutClick = async () => {
+    await logout();
   };
 
   return (
@@ -60,15 +61,15 @@ export default function AccountPopover() {
         }}
       >
         <Avatar
-          src={account.photoURL}
-          alt={account.displayName}
+          src={user.photoURL}
+          alt={user.fullName}
           sx={{
             width: 36,
             height: 36,
             border: (theme) => `solid 2px ${theme.palette.background.default}`,
           }}
         >
-          {account.displayName.charAt(0).toUpperCase()}
+          {user.fullName.charAt(0).toUpperCase()}
         </Avatar>
       </IconButton>
 
@@ -89,10 +90,10 @@ export default function AccountPopover() {
       >
         <Box sx={{ my: 1.5, px: 2 }}>
           <Typography variant="subtitle2" noWrap>
-            {account.displayName}
+            {user.fullName}
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
-            {account.email}
+            {user.email}
           </Typography>
         </Box>
 
@@ -109,7 +110,7 @@ export default function AccountPopover() {
         <MenuItem
           disableRipple
           disableTouchRipple
-          onClick={handleClose}
+          onClick={handleLogoutClick}
           sx={{ typography: 'body2', color: 'error.main', py: 1.5 }}
         >
           Logout

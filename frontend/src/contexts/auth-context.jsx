@@ -2,6 +2,7 @@
 import PropTypes from 'prop-types';
 /* eslint-disable no-undef */
 import { Amplify } from 'aws-amplify';
+import { useDispatch } from 'react-redux';
 import { useEffect, useReducer, useContext, useCallback, createContext } from 'react';
 import {
   signIn,
@@ -16,6 +17,7 @@ import {
 
 import axios from 'src/lib/axios';
 import { amplifyConfig } from 'src/config';
+import { getProjectById } from 'src/redux/slices/projects';
 
 Amplify.configure(amplifyConfig);
 
@@ -53,6 +55,7 @@ const handlers = {
     isAuthenticated: false,
     user: null,
     isLoggedOut: true,
+    isInitialized: true,
   }),
   UPDATE_USER: (state, action) => {
     const { patchAttr } = action.payload;
@@ -106,11 +109,12 @@ const loadUserData = async () => {
 
 const getProjectInformation = async (projectId) => {
   const resp = await axios.get(`/api/projects/${projectId}`);
-  return resp.data;
+  return resp.data.project;
 };
 
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const toolkitDispatch = useDispatch();
 
   const getCurrentProject = useCallback(async (user) => {
     if (user.projects.length === 0) {
@@ -126,6 +130,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const user = await loadUserData();
         const currentProject = await getCurrentProject(user);
+        await toolkitDispatch(getProjectById(currentProject.id));
         dispatch({
           type: 'INITIALIZE',
           payload: {
@@ -148,6 +153,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     initialize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getCurrentProject]);
 
   const refreshToken = async () => {

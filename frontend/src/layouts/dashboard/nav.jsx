@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useSelector } from 'react-redux';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
-import Avatar from '@mui/material/Avatar';
 import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -22,14 +22,9 @@ import navConfig from './config-navigation';
 
 // ----------------------------------------------------------------------
 
-const account = {
-  photoURL: '',
-  role: '',
-  displayName: '',
-};
-
 export default function Nav({ openNav, onCloseNav }) {
   const pathname = usePathname();
+  const { project } = useSelector((state) => state.projects);
 
   const upLg = useResponsive('up', 'lg');
 
@@ -40,7 +35,7 @@ export default function Nav({ openNav, onCloseNav }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  const renderAccount = (
+  const renderProjectHeader = (
     <Box
       sx={{
         my: 3,
@@ -53,13 +48,9 @@ export default function Nav({ openNav, onCloseNav }) {
         bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
       }}
     >
-      <Avatar src={account.photoURL} alt="photoURL" />
-
-      <Box sx={{ ml: 2 }}>
-        <Typography variant="subtitle2">{account.displayName}</Typography>
-
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {account.role}
+      <Box>
+        <Typography variant="body2" fontWeight={600}>
+          {project.name} | {project.region}
         </Typography>
       </Box>
     </Box>
@@ -86,7 +77,7 @@ export default function Nav({ openNav, onCloseNav }) {
     >
       <Logo sx={{ mt: 3, ml: 4 }} />
 
-      {renderAccount}
+      {renderProjectHeader}
 
       {renderMenu}
 
