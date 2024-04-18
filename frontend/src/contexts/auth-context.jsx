@@ -17,7 +17,7 @@ import {
 
 import axios from 'src/lib/axios';
 import { amplifyConfig } from 'src/config';
-import { getProjectById } from 'src/redux/slices/projects';
+import { setProject } from 'src/redux/slices/projects';
 
 Amplify.configure(amplifyConfig);
 
@@ -130,7 +130,6 @@ export const AuthProvider = ({ children }) => {
       try {
         const user = await loadUserData();
         const currentProject = await getCurrentProject(user);
-        await toolkitDispatch(getProjectById(currentProject.id));
         dispatch({
           type: 'INITIALIZE',
           payload: {
@@ -268,8 +267,17 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const changeEntity = async (id, entityType) => {
-    // Implementation for changing entities, like switching between workspaces or organizations
+  const changeEntity = async (id) => {
+    const project = await getProjectInformation(id);
+    await toolkitDispatch(setProject(project));
+    dispatch({
+      type: 'UPDATE_USER',
+      payload: {
+        patchAttr: {
+          currentProject: project,
+        },
+      },
+    });
   };
 
   return (

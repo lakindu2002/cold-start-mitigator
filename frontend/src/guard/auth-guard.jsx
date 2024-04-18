@@ -4,7 +4,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 import { useAuth } from 'src/contexts/auth-context';
 
-const unprotectedRoutes = ['/login', '/register', '/confirm-account', '/reset-password', '/'];
+const unprotectedRoutes = [
+  '/login',
+  '/register',
+  '/confirm-account',
+  '/reset-password',
+  '/',
+  '/create-project',
+];
 
 export const AuthGuard = (props) => {
   const { children } = props;
@@ -18,17 +25,24 @@ export const AuthGuard = (props) => {
       setChecked(true);
       return;
     }
+
     if (!isAuthenticated) {
       navigate('/login');
     } else {
+      if (pathname === '/create-project') {
+        setChecked(true);
+        return;
+      }
       if (user.projects.length > 0) {
         const firstProjectId = user.projects[0].id;
-        navigate(`/projects/${firstProjectId}`);
+        const projectId = user?.currentProject?.id || firstProjectId;
+        navigate(`/projects/${projectId}`);
       } else {
         navigate(`/create-project`);
       }
       setChecked(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, navigate, pathname, user?.projects]);
 
   useEffect(() => {

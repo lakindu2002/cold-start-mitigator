@@ -36,10 +36,24 @@ export default function AppView() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getProjectById(user?.currentProject.id));
-  }, [dispatch, user?.currentProject.id]);
+    const getProject = async () => {
+      await dispatch(getProjectById(user?.currentProject.id));
+    };
 
-  const chartSeries = Object.values(project.logsByDay).reduce((acc, curr) => {
+    getProject();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.currentProject.id]);
+
+  if (projectLoading) {
+    return (
+      <Box sx={{ my: 35, display: 'flex', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  const chartSeries = Object.values(project?.logsByDay || {}).reduce((acc, curr) => {
     Object.entries(curr).forEach(([key, value]) => {
       const item = acc.find((eachAcc) => eachAcc.name === key);
       if (item) {
@@ -51,15 +65,7 @@ export default function AppView() {
     return acc;
   }, []);
 
-  if (projectLoading) {
-    return (
-      <Box sx={{ my: 35, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  return (
+  return project ? (
     <Container maxWidth="xl">
       <Typography variant="h4" sx={{ mb: 5 }}>
         Hi {user?.fullName}, Welcome back 👋
@@ -116,5 +122,5 @@ export default function AppView() {
         </Grid>
       </Grid>
     </Container>
-  );
+  ) : null;
 }

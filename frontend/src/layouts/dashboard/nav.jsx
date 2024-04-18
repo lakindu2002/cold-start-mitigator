@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
+import { IconButton } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -25,6 +27,7 @@ import navConfig from './config-navigation';
 export default function Nav({ openNav, onCloseNav }) {
   const pathname = usePathname();
   const { project } = useSelector((state) => state.projects);
+  const navigate = useNavigate();
 
   const upLg = useResponsive('up', 'lg');
 
@@ -34,6 +37,10 @@ export default function Nav({ openNav, onCloseNav }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
+
+  const handleNewProjectClick = () => {
+    navigate('/create-project');
+  };
 
   const renderProjectHeader = (
     <Box
@@ -48,10 +55,20 @@ export default function Nav({ openNav, onCloseNav }) {
         bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
       }}
     >
-      <Box>
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', width: '100%' }}>
         <Typography variant="body2" fontWeight={600}>
-          {project.name} | {project.region}
+          {project?.name} <br />
+          Region: {project?.region}
         </Typography>
+        <IconButton
+          onClick={handleNewProjectClick}
+          sx={{
+            width: 35,
+            ml: 'auto',
+          }}
+        >
+          <img alt="icon" src="/assets/plus.png" />
+        </IconButton>
       </Box>
     </Box>
   );

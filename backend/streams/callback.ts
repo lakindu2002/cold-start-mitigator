@@ -128,6 +128,15 @@ export const projectTableStreamCallback = new aws.lambda.CallbackFunction(
                   },
                 })
                 .promise();
+
+              // manually trigger data collectio
+              const sqs = new awsSdk.SQS();
+              await sqs
+                .sendMessage({
+                  QueueUrl: Queues.globalScheduleProcessingQueue.url.get(),
+                  MessageBody: JSON.stringify({ project: newState }),
+                })
+                .promise();
             }
           }
         }

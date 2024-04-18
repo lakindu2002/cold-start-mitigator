@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Outlet, Navigate, useRoutes } from 'react-router-dom';
 
-import { AuthGuard } from 'src/guard/auth-guard';
 import DashboardLayout from 'src/layouts/dashboard';
 
 export const HomePage = lazy(() => import('src/pages/app'));
@@ -21,13 +20,11 @@ export default function Router() {
   const routes = useRoutes([
     {
       element: (
-        <AuthGuard>
-          <DashboardLayout>
-            <Suspense>
-              <Outlet />
-            </Suspense>
-          </DashboardLayout>
-        </AuthGuard>
+        <DashboardLayout>
+          <Suspense>
+            <Outlet />
+          </Suspense>
+        </DashboardLayout>
       ),
       path: 'projects/:projectId',
       children: [
@@ -50,11 +47,7 @@ export default function Router() {
       ],
     },
     {
-      element: (
-        <AuthGuard>
-          <Outlet />
-        </AuthGuard>
-      ),
+      element: <Outlet />,
       path: '',
       children: [
         { element: <LandingPage />, index: true },

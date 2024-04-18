@@ -28,3 +28,7 @@ export const getProjectById = (projectId) => async (dispatch) => {
   dispatch(projectsSlice.actions.setProject({ project: resp.data.project }))
   dispatch(projectsSlice.actions.setProjectLoading({ loading: false }));
 }
+
+export const setProject = (project) => async (dispatch) => {
+  dispatch(projectsSlice.actions.setProject({ project }));
+}
