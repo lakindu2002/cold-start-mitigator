@@ -2,10 +2,17 @@ import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as awsSdk from "aws-sdk";
 import * as awsx from "@pulumi/awsx";
-import { SuccessTrue, SuccessWithData } from "../helpers/response-helpers";
+import {
+  BadRequest,
+  CustomResponse,
+  SuccessTrue,
+  SuccessWithData,
+} from "../helpers/response-helpers";
 import { Parse } from "../helpers/event-helpers";
 import { ProjectFunctionLogs, ProjectTable } from "../../dynamodb";
 import { Project, ProjectFunctionLog } from "../../types";
+import { integrateWithRole } from "../../utils/integrate-with-role";
+import { ManagedPolicy } from "@pulumi/aws/iam";
 
 const stage = pulumi.getStack();
 
@@ -47,19 +54,49 @@ export const updateProject = new aws.lambda.CallbackFunction(
       const { body, pathParams } = Parse(event);
       const { projectId } = pathParams;
 
-      const { frequency, patterns, region } = body as {
+      const { frequency, patterns, region, name, roleArn } = body as {
         patterns?: string[];
         frequency?: number;
         region?: string;
+        name?: string;
+        roleArn?: string;
       };
+
+      const dynamo = new awsSdk.DynamoDB.DocumentClient();
+
+      if (roleArn) {
+        const { Items = [] } = await dynamo
+          .query({
+            TableName: ProjectTable.name.get(),
+            KeyConditionExpression: "#id = :id",
+            ProjectionExpression: "#externalId",
+            ExpressionAttributeNames: {
+              "#id": "id",
+              "#externalId": "externalId",
+            },
+            ExpressionAttributeValues: {
+              ":id": projectId,
+            },
+          })
+          .promise();
+
+        const project = Items[0] as Project;
+        const { externalId } = project;
+
+        const integrationStatus = await integrateWithRole(roleArn, externalId);
+        if (integrationStatus === false) {
+          return CustomResponse(
+            "Failed to create a link with AWS Account",
+            502
+          );
+        }
+      }
 
       const {
         ExpressionAttributeNames,
         ExpressionAttributeValues,
         UpdateExpression,
-      } = createUpdateParams({ frequency, patterns, region });
-
-      const dynamo = new awsSdk.DynamoDB.DocumentClient();
+      } = createUpdateParams({ frequency, patterns, region, name, roleArn });
 
       await dynamo
         .update({
@@ -73,6 +110,35 @@ export const updateProject = new aws.lambda.CallbackFunction(
 
       return SuccessTrue();
     },
+    role: new aws.iam.Role(`${stage}-update-project-role`, {
+      assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
+        Service: "lambda.amazonaws.com",
+      }),
+      managedPolicyArns: [
+        ManagedPolicy.AWSXrayFullAccess,
+        ManagedPolicy.LambdaFullAccess,
+        ManagedPolicy.AmazonDynamoDBFullAccess,
+        ManagedPolicy.AWSXrayFullAccess,
+        ManagedPolicy.CloudWatchEventsFullAccess,
+        ManagedPolicy.AWSLambdaBasicExecutionRole,
+      ],
+      inlinePolicies: [
+        {
+          name: "sts-assume-role",
+          policy: JSON.stringify({
+            Version: "2012-10-17",
+            Statement: [
+              {
+                Sid: "allowStsAssumeRole",
+                Effect: "Allow",
+                Action: ["sts:AssumeRole"],
+                Resource: ["*"],
+              },
+            ],
+          }),
+        },
+      ],
+    }),
   }
 );
 

@@ -17,12 +17,16 @@ import { RouterLink } from 'src/routes/components';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import Logo from 'src/components/logo';
+import SvgColor from 'src/components/svg-color';
 import Scrollbar from 'src/components/scrollbar';
 
 import { NAV } from './config-layout';
-import navConfig from './config-navigation';
 
 // ----------------------------------------------------------------------
+
+const icon = (name) => (
+  <SvgColor src={`/assets/icons/navbar/${name}.svg`} sx={{ width: 1, height: 1 }} />
+);
 
 export default function Nav({ openNav, onCloseNav }) {
   const pathname = usePathname();
@@ -30,6 +34,19 @@ export default function Nav({ openNav, onCloseNav }) {
   const navigate = useNavigate();
 
   const upLg = useResponsive('up', 'lg');
+
+  const navConfig = [
+    {
+      title: 'dashboard',
+      path: `/projects/${project?.id}`,
+      icon: icon('ic_analytics'),
+    },
+    {
+      title: 'settings',
+      path: `/projects/${project?.id}/settings`,
+      icon: icon('ic_blog'),
+    },
+  ];
 
   useEffect(() => {
     if (openNav) {

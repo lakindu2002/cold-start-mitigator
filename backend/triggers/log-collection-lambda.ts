@@ -91,9 +91,9 @@ export const logCollectionLambda = new aws.lambda.CallbackFunction(
         } catch (error) {
           if ((error as any)?.code === "ResourceNotFoundException") {
             console.log(`No logs found for function ${functionName}`);
-            return;
+          } else {
+            throw error;
           }
-          throw error;
         }
 
         const relevantLogs = filterLogsExludingAppLogs(logs);

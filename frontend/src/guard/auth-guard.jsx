@@ -33,10 +33,20 @@ export const AuthGuard = (props) => {
         setChecked(true);
         return;
       }
-      if (user.projects.length > 0) {
+
+      if (user.projects.length > 0 && !user?.currentProject) {
         const firstProjectId = user.projects[0].id;
         const projectId = user?.currentProject?.id || firstProjectId;
         navigate(`/projects/${projectId}`);
+      } else if (user?.currentProject) {
+        // get the project id from the URL
+        const projectId = pathname.split('/')[2];
+        const project = user.projects.find((p) => p.id === projectId);
+        if (!project) {
+          navigate(`/projects/${user.projects[0].id}`);
+        } else {
+          setChecked(true);
+        }
       } else {
         navigate(`/create-project`);
       }

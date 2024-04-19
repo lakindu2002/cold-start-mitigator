@@ -17,6 +17,9 @@ export const projectsSlice = createSlice({
     setProjectLoading: (state, action) => {
       state.projectLoading = action.payload.loading;
     },
+    updateProject: (state, action) => {
+      state.project = { ...state.project, ...action.payload.project };
+    }
   },
 });
 
@@ -31,4 +34,9 @@ export const getProjectById = (projectId) => async (dispatch) => {
 
 export const setProject = (project) => async (dispatch) => {
   dispatch(projectsSlice.actions.setProject({ project }));
+}
+
+export const patchProject = (projectId, projectToPatch) => async (dispatch) => {
+  await axiosLiveInstance.patch(`/api/projects/${projectId}`, projectToPatch)
+  dispatch(projectsSlice.actions.updateProject({ project: projectToPatch }))
 }

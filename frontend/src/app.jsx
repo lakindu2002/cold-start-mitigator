@@ -16,10 +16,10 @@ export default function App() {
 
   return (
     <AuthGuard>
-        <Toaster />
-        <ThemeProvider>
-          <Router />
-        </ThemeProvider>
-      </AuthGuard>
+      <Toaster />
+      <ThemeProvider>
+        <Router />
+      </ThemeProvider>
+    </AuthGuard>
   );
 }
