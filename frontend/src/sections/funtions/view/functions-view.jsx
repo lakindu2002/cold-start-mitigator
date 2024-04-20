@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import {
@@ -12,7 +13,10 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { getFunctionsInProject } from 'src/redux/slices/projects';
+import {
+  getFunctionsInProject,
+  predictInvocationTimesForFunctions,
+} from 'src/redux/slices/projects';
 
 import Scrollbar from 'src/components/scrollbar';
 
@@ -32,6 +36,7 @@ const FunctionsView = () => {
   const [orderBy, setOrderBy] = useState('name');
   const [filterName, setFilterName] = useState('');
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const navigate = useNavigate();
 
   useEffect(() => {
     dispatch(getFunctionsInProject());
@@ -86,6 +91,10 @@ const FunctionsView = () => {
     setFilterName(event.target.value);
   };
 
+  const handlePredictClick = async () => {
+    dispatch(predictInvocationTimesForFunctions(selected));
+  };
+
   const dataFiltered = applyFilter({
     inputData: functions,
     comparator: getComparator(order, orderBy),
@@ -112,6 +121,7 @@ const FunctionsView = () => {
             numSelected={selected.length}
             filterName={filterName}
             onFilterName={handleFilterByName}
+            onPredictClick={handlePredictClick}
           />
           <Scrollbar>
             <TableContainer sx={{ overflow: 'unset' }}>
@@ -152,6 +162,9 @@ const FunctionsView = () => {
                         cold={row.wasCold}
                         selected={selected.indexOf(row.name) !== -1}
                         handleClick={(event) => handleClick(event, row.name)}
+                        handleViewLogs={() =>
+                          navigate(`/projects/${project.id}/functions/${row.name}/logs`)
+                        }
                       />
                     ))}
 

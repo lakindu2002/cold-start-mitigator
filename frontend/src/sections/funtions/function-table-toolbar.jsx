@@ -11,7 +11,12 @@ import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export default function FunctionTableToolbar({ numSelected, filterName, onFilterName }) {
+export default function FunctionTableToolbar({
+  numSelected,
+  filterName,
+  onFilterName,
+  onPredictClick,
+}) {
   return (
     <Toolbar
       sx={{
@@ -46,9 +51,9 @@ export default function FunctionTableToolbar({ numSelected, filterName, onFilter
       )}
 
       {numSelected > 0 && (
-        <Tooltip title="Delete">
-          <IconButton>
-            <Iconify icon="eva:trash-2-fill" />
+        <Tooltip title="Predict">
+          <IconButton onClick={onPredictClick}>
+            <Iconify icon="eva:clock-outline" />
           </IconButton>
         </Tooltip>
       )}
@@ -60,4 +65,5 @@ FunctionTableToolbar.propTypes = {
   numSelected: PropTypes.number,
   filterName: PropTypes.string,
   onFilterName: PropTypes.func,
+  onPredictClick: PropTypes.func,
 };

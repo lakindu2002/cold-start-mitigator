@@ -311,18 +311,28 @@ export const predictNextInvocationHandler = new aws.lambda.CallbackFunction(
     ): Promise<awsx.classic.apigateway.Response> => {
       const { pathParams, body } = Parse(event);
       const { projectId } = pathParams;
-      const { functionName } = body as { functionName: string };
+      const { functionNames } = body as { functionNames: string[] };
 
       const lambda = new awsSdk.Lambda();
+      const promises = functionNames.map(async (functionName) => {
+        const resp = await lambda
+          .invoke({
+            FunctionName: predictNextInvocation.arn.get(),
+            Payload: JSON.stringify({ projectId, functionName }),
+          })
+          .promise();
 
-      const resp = await lambda
-        .invoke({
-          FunctionName: predictNextInvocation.arn.get(),
-          Payload: JSON.stringify({ projectId, functionName }),
-        })
-        .promise();
+        const payload = JSON.parse(resp.Payload as string);
 
-      return SuccessWithData({ resp });
+        if (payload.statusCode === 200) {
+          const body = JSON.parse(payload.body);
+          return { times: body.data, functionName };
+        }
+        return { times: [], functionName };
+      });
+      const results = await Promise.all(promises);
+
+      return SuccessWithData({ results });
     },
   }
 );
@@ -396,6 +406,49 @@ export const getFunctionsPerProject = new aws.lambda.CallbackFunction(
       const functionsWithInvocationTime = await Promise.all(promises);
 
       return SuccessWithData({ functions: functionsWithInvocationTime });
+    },
+  }
+);
+
+export const getLogsPerFunctions = new aws.lambda.CallbackFunction(
+  `${stage}-get-logs-per-function`,
+  {
+    memorySize: 1024,
+    timeout: 30,
+    callback: async (
+      event: awsx.classic.apigateway.Request
+    ): Promise<awsx.classic.apigateway.Response> => {
+      const { pathParams, body } = Parse(event);
+      const { projectId } = pathParams;
+      const {
+        nextKey,
+        limit = 10,
+        functionName,
+      } = body as { nextKey: any; limit?: number; functionName: string };
+
+      const MAX_LIMIT = limit > 10 ? 10 : limit;
+
+      const dynamo = new awsSdk.DynamoDB.DocumentClient();
+
+      const { Items = [], LastEvaluatedKey } = await dynamo
+        .query({
+          TableName: ProjectFunctionLogs.name.get(),
+          IndexName: "by-project-id-function-name-invoked-at",
+          KeyConditionExpression:
+            "#projectIdfunctionName = :projectIdfunctionName",
+          ExpressionAttributeNames: {
+            "#projectIdfunctionName": "projectIdfunctionName",
+          },
+          ExpressionAttributeValues: {
+            ":projectIdfunctionName": `${projectId}#${functionName}`,
+          },
+          ScanIndexForward: false,
+          Limit: MAX_LIMIT,
+          ExclusiveStartKey: nextKey,
+        })
+        .promise();
+
+      return SuccessWithData({ logs: Items, nextKey: LastEvaluatedKey });
     },
   }
 );

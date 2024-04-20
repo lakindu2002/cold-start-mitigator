@@ -25,6 +25,7 @@ export default function FunctionTableRow({
   lastInvokedAt,
   cold,
   handleClick,
+  handleViewLogs,
 }) {
   const [open, setOpen] = useState(null);
 
@@ -87,14 +88,9 @@ export default function FunctionTableRow({
           sx: { width: 140 },
         }}
       >
-        <MenuItem onClick={handleCloseMenu}>
-          <Iconify icon="eva:edit-fill" sx={{ mr: 2 }} />
-          Edit
-        </MenuItem>
-
-        <MenuItem onClick={handleCloseMenu} sx={{ color: 'error.main' }}>
-          <Iconify icon="eva:trash-2-outline" sx={{ mr: 2 }} />
-          Delete
+        <MenuItem onClick={handleViewLogs}>
+          <Iconify icon="eva:arrow-right-outline" sx={{ mr: 2 }} />
+          View Logs
         </MenuItem>
       </Popover>
     </>
@@ -113,4 +109,5 @@ FunctionTableRow.propTypes = {
   selected: PropTypes.any,
   lastInvokedAt: PropTypes.number,
   cold: PropTypes.bool,
+  handleViewLogs: PropTypes.func,
 };

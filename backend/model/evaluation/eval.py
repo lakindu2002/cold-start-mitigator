@@ -165,16 +165,16 @@ def handler(event, context):
         KeyConditionExpression="projectIdfunctionName = :functionName",
         ExpressionAttributeValues={":functionName": f"{project_id}#{function_name}"},
         ScanIndexForward=False,
-        Limit=50,
+        Limit=100,
     )
     
     # Sort the data by 'lastInvokedAt' in descending order
-    sort_data = sorted(response["Items"], key=lambda x: x["lastInvokedAt"], reverse=True)
+    # sort_data = sorted(response["Items"], key=lambda x: x["lastInvokedAt"], reverse=True)
     
-    data = pd.DataFrame(sort_data)
+    data = pd.DataFrame(response["Items"])
 
     x = preprocess_data(data, scaler, function_dummies, function_name)
-
+    
     # predictions are the scaled predictions from  model
     predictions = model.predict(x, batch_size=19)
     # prepare a dummy array with the same shape as the training feature array

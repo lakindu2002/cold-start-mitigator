@@ -8,6 +8,12 @@ const initialState = {
   projectLoading: false,
   functions: [],
   functionsLoading: false,
+  predicting: false,
+  predictingResults: [],
+  logs: [],
+  logsLoading: false,
+  loadingMoreLogs: false,
+  logsNextKey: undefined
 };
 
 export const projectsSlice = createSlice({
@@ -28,8 +34,29 @@ export const projectsSlice = createSlice({
     },
     setFunctionsLoading: (state, action) => {
       state.functionsLoading = action.payload.loading;
-    }
-  },
+    },
+    setPredicting: (state, action) => {
+      state.predicting = action.payload.predicting;
+    },
+    setPredictingResults: (state, action) => {
+      state.predictingResults = action.payload.predictingResults;
+    },
+    setLogs: (state, action) => {
+      state.logs = action.payload.logs;
+    },
+    appendLogs: (state, action) => {
+      state.logs = [...state.logs, ...action.payload.logs];
+    },
+    setLogsLoading: (state, action) => {
+      state.logsLoading = action.payload.logsLoading;
+    },
+    setLoadingMoreLogs: (state, action) => {
+      state.loadingMoreLogs = action.payload.loadingMoreLogs;
+    },
+    setLogsNextKey: (state, action) => {
+      state.logsNextKey = action.payload.logsNextKey;
+    },
+  }
 });
 
 export default projectsSlice.reducer;
@@ -68,3 +95,46 @@ export const getFunctionsInProject = () => async (dispatch, getState) => {
     dispatch(projectsSlice.actions.setFunctionsLoading({ loading: false }));
   }
 }
+
+export const predictInvocationTimesForFunctions = (functionNames) => async (dispatch, getState) => {
+  const { project: { id } } = getState().projects;
+  dispatch(projectsSlice.actions.setPredicting({ predicting: true }));
+  try {
+    const resp = await axiosLiveInstance.post(`/api/projects/${id}/functions/predict`, { functionNames })
+    dispatch(projectsSlice.actions.setPredictingResults({ predictingResults: resp.data.results }))
+    toast.success('We have predicted the invocation times for the selected functions.')
+  } catch (err) {
+    toast.error('We could not predict the invocation times for the selected functions. Please try again later.')
+  } finally {
+    dispatch(projectsSlice.actions.setPredicting({ predicting: false }));
+  }
+}
+
+export const getLogsForFunction = (functionName, type) => async (dispatch, getState) => {
+  const { project: { id }, logsNextKey } = getState().projects;
+  if (type === 'initial') {
+    dispatch(projectsSlice.actions.setLogsLoading({ logsLoading: true }));
+  } else {
+    dispatch(projectsSlice.actions.setLoadingMoreLogs({ loadingMoreLogs: true }));
+  }
+  try {
+    if (type === 'initial') {
+      dispatch(projectsSlice.actions.setLogs({ logs: [] }))
+    }
+    const resp = await axiosLiveInstance.post(`/api/projects/${id}/functions/logs`, { limit: 10, ...type === 'paginate' && { nextKey: logsNextKey }, functionName })
+    if (type === 'initial') {
+      dispatch(projectsSlice.actions.setLogs({ logs: resp.data.logs }))
+    } else {
+      dispatch(projectsSlice.actions.appendLogs({ logs: resp.data.logs }))
+    }
+    dispatch(projectsSlice.actions.setLogsNextKey({ logsNextKey: resp.data.nextKey }))
+  } catch (err) {
+    toast.error('We could not fetch the logs for this function. Please try again later.')
+  } finally {
+    if (type === 'initial') {
+      dispatch(projectsSlice.actions.setLogsLoading({ logsLoading: false }));
+    } else {
+      dispatch(projectsSlice.actions.setLoadingMoreLogs({ loadingMoreLogs: false }));
+    }
+  }
+};

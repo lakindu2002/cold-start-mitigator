@@ -53,6 +53,12 @@ export const api = new awsx.classic.apigateway.API(`${stage}-api-gateway`, {
       eventHandler: projects.predictNextInvocationHandler,
       authorizers: output.cognitoAuthorizer,
     },
+    {
+      path: "/projects/{projectId}/functions/logs",
+      method: "POST",
+      eventHandler: projects.getLogsPerFunctions,
+      authorizers: output.cognitoAuthorizer,
+    },
   ],
   restApiArgs: {
     binaryMediaTypes: [],

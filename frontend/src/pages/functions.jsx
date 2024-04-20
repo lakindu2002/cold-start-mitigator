@@ -8,7 +8,7 @@ export default function FunctionsPage() {
   return (
     <>
       <Helmet>
-        <title> Create a Project | HeatShield</title>
+        <title> Lambda Functions | HeatShield</title>
       </Helmet>
 
       <FunctionsView />

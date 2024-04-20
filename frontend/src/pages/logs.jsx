@@ -1,17 +1,16 @@
 import { Helmet } from 'react-helmet-async';
 
-import { UserView } from 'src/sections/user/view';
+import LogsView from 'src/sections/logs/view/logs-view';
 
 // ----------------------------------------------------------------------
 
-export default function UserPage() {
+export default function LogsPage() {
   return (
     <>
       <Helmet>
-        <title> User | Minimal UI </title>
+        <title> Logs | HeatShield</title>
       </Helmet>
-
-      <UserView />
+      <LogsView />
     </>
   );
 }
