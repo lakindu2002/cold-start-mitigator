@@ -17,6 +17,7 @@ import {
 import { Project, ProjectFunction, ProjectFunctionLog } from "../../types";
 import { integrateWithRole } from "../../utils/integrate-with-role";
 import { ManagedPolicy } from "@pulumi/aws/iam";
+import { addSeconds } from "date-fns";
 
 const stage = pulumi.getStack();
 
@@ -313,6 +314,39 @@ export const predictNextInvocationHandler = new aws.lambda.CallbackFunction(
       const { projectId } = pathParams;
       const { functionNames } = body as { functionNames: string[] };
 
+      // get the last invocation timestamp for each function
+      const dynamo = new awsSdk.DynamoDB.DocumentClient();
+
+      const lastInvocationTimes = await Promise.all(
+        functionNames.map(async (functionName) => {
+          const { Items = [] } = await dynamo
+            .query({
+              TableName: ProjectFunctionLogs.name.get(),
+              IndexName: "by-project-id-function-name-invoked-at",
+              KeyConditionExpression:
+                "#projectIdfunctionName = :projectIdfunctionName",
+              ExpressionAttributeNames: {
+                "#projectIdfunctionName": "projectIdfunctionName",
+              },
+              ExpressionAttributeValues: {
+                ":projectIdfunctionName": `${projectId}#${functionName}`,
+              },
+              ScanIndexForward: false,
+              Limit: 1,
+            })
+            .promise();
+
+          const lastInvokedAt = Items[0] as ProjectFunctionLog;
+
+          return {
+            functionName,
+            time: lastInvokedAt
+              ? Number(lastInvokedAt.lastInvokedAt.split("#")[1])
+              : 0,
+          };
+        })
+      );
+
       const lambda = new awsSdk.Lambda();
       const promises = functionNames.map(async (functionName) => {
         const resp = await lambda
@@ -326,13 +360,37 @@ export const predictNextInvocationHandler = new aws.lambda.CallbackFunction(
 
         if (payload.statusCode === 200) {
           const body = JSON.parse(payload.body);
-          return { times: body.data, functionName };
+          const timestamps = (body.data || []) as number[];
+          const lowestTimeStamp = timestamps.filter(
+            (eachTimestamp: number) => eachTimestamp > 0
+          )[0];
+
+          return { time: lowestTimeStamp, functionName };
         }
-        return { times: [], functionName };
+        return { time: 0, functionName };
       });
       const results = await Promise.all(promises);
 
-      return SuccessWithData({ results });
+      const newResults = await Promise.all(
+        results.map(async (eachResult) => {
+          const { functionName, time: timeInSeconds } = eachResult;
+          const lastInvocationTimeInMilliSeconds = lastInvocationTimes.find(
+            (each) => each.functionName === functionName
+          )?.time as number;
+
+          const nextInvocationTime = addSeconds(
+            lastInvocationTimeInMilliSeconds,
+            timeInSeconds
+          );
+
+          return {
+            functionName,
+            time: nextInvocationTime.getTime(),
+          };
+        })
+      );
+
+      return SuccessWithData({ results: newResults });
     },
   }
 );
@@ -389,8 +447,6 @@ export const getFunctionsPerProject = new aws.lambda.CallbackFunction(
             Limit: 1,
           })
           .promise();
-
-        console.log({ Items });
 
         const lastInvokedAt = Items[0] as ProjectFunctionLog;
 

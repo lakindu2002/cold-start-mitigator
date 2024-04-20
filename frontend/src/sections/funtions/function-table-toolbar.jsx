@@ -1,7 +1,9 @@
 import PropTypes from 'prop-types';
+import { useSelector } from 'react-redux';
 
 import Tooltip from '@mui/material/Tooltip';
 import Toolbar from '@mui/material/Toolbar';
+import { CircularProgress } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import OutlinedInput from '@mui/material/OutlinedInput';
@@ -17,6 +19,7 @@ export default function FunctionTableToolbar({
   onFilterName,
   onPredictClick,
 }) {
+  const { predicting } = useSelector((state) => state.projects);
   return (
     <Toolbar
       sx={{
@@ -52,9 +55,13 @@ export default function FunctionTableToolbar({
 
       {numSelected > 0 && (
         <Tooltip title="Predict">
-          <IconButton onClick={onPredictClick}>
-            <Iconify icon="eva:clock-outline" />
-          </IconButton>
+          {predicting ? (
+            <CircularProgress />
+          ) : (
+            <IconButton onClick={onPredictClick}>
+              <Iconify icon="eva:clock-outline" />
+            </IconButton>
+          )}
         </Tooltip>
       )}
     </Toolbar>

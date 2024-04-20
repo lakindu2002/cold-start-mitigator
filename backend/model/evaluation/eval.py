@@ -169,9 +169,9 @@ def handler(event, context):
     )
     
     # Sort the data by 'lastInvokedAt' in descending order
-    # sort_data = sorted(response["Items"], key=lambda x: x["lastInvokedAt"], reverse=True)
+    sort_data = sorted(response["Items"], key=lambda x: x["lastInvokedAt"], reverse=True)
     
-    data = pd.DataFrame(response["Items"])
+    data = pd.DataFrame(sort_data)
 
     x = preprocess_data(data, scaler, function_dummies, function_name)
     

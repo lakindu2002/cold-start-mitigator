@@ -23,7 +23,7 @@ export const amplifyConfig = {
 };
 
 // Frequencies denoted in hours
-export const COLLECTION_FREQUENCIES = [1, 3, 5, 7, 9, 12, 24];
+export const COLLECTION_FREQUENCIES = [0.17, 0.5, 1, 3, 5, 7, 9, 12, 24];
 
 export const AWS_REGIONS = [
   {

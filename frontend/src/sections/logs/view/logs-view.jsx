@@ -7,6 +7,8 @@ import { Box, Container, Typography, CircularProgress } from '@mui/material';
 
 import { getLogsForFunction, predictInvocationTimesForFunctions } from 'src/redux/slices/projects';
 
+import { FunctionNextPrediction } from 'src/components/function-next-prediction';
+
 import { LogCard } from 'src/sections/logs/log-card';
 
 const LogsView = () => {
@@ -36,6 +38,7 @@ const LogsView = () => {
 
   return (
     <Container>
+      <FunctionNextPrediction />
       <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4">Functions Logs</Typography>

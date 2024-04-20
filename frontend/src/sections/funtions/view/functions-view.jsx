@@ -19,6 +19,7 @@ import {
 } from 'src/redux/slices/projects';
 
 import Scrollbar from 'src/components/scrollbar';
+import { FunctionNextPrediction } from 'src/components/function-next-prediction';
 
 import TableNoData from '../table-no-data';
 import TableEmptyRows from '../table-empty-rows';
@@ -105,6 +106,7 @@ const FunctionsView = () => {
 
   return (
     <Container>
+      <FunctionNextPrediction />
       <Typography variant="h4">Lambda Functions</Typography>
       <Typography variant="caption">
         Here&apos;s Lambda functions that match your prefix: {project.patterns.join(', ')} in

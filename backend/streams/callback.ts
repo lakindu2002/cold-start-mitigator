@@ -91,11 +91,19 @@ export const projectTableStreamCallback = new aws.lambda.CallbackFunction(
               scheduleName = `project-${id}-${createDefinedUUID(5)}`;
             }
 
+
+            const parsedFrequency =
+              (newFrequency as number) < 1
+                ? Math.floor((newFrequency as number) * 60)
+                : (newFrequency as number);
+
             const params = {
               Name: scheduleName,
               StartDate: new Date(),
               State: "ENABLED",
-              ScheduleExpression: `rate(${newFrequency} hours)`,
+              ScheduleExpression: `rate(${parsedFrequency} ${
+                (newFrequency as number) < 1 ? "minutes" : "hours"
+              })`,
               FlexibleTimeWindow: {
                 Mode: "FLEXIBLE",
                 MaximumWindowInMinutes: 15,

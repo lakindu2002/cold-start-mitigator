@@ -138,3 +138,7 @@ export const getLogsForFunction = (functionName, type) => async (dispatch, getSt
     }
   }
 };
+
+export const clearPredictionResults = () => async (dispatch) => {
+  dispatch(projectsSlice.actions.setPredictingResults({ predictingResults: [] }));
+}
