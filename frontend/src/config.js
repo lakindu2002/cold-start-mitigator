@@ -1,4 +1,5 @@
-const env = await import.meta.env;
+const env = import.meta.env;
+
 export const hostConfig = {
   baseURL: env.VITE_BASE_URL,
 };
