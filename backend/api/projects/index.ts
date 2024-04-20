@@ -3,7 +3,6 @@ import * as aws from "@pulumi/aws";
 import * as awsSdk from "aws-sdk";
 import * as awsx from "@pulumi/awsx";
 import {
-  BadRequest,
   CustomResponse,
   SuccessTrue,
   SuccessWithData,
@@ -17,7 +16,7 @@ import {
 import { Project, ProjectFunction, ProjectFunctionLog } from "../../types";
 import { integrateWithRole } from "../../utils/integrate-with-role";
 import { ManagedPolicy } from "@pulumi/aws/iam";
-import { addSeconds, subMinutes } from "date-fns";
+import { subMinutes } from "date-fns";
 import {
   createPredictionTime,
   toCronExpression,
@@ -107,7 +106,13 @@ export const updateProject = new aws.lambda.CallbackFunction(
         ExpressionAttributeNames,
         ExpressionAttributeValues,
         UpdateExpression,
-      } = createUpdateParams({ frequency, patterns, region, name, roleArn });
+      } = createUpdateParams({
+        frequency,
+        patterns,
+        ...(region && { region }),
+        ...(name && { name }),
+        ...(roleArn && { roleArn }),
+      });
 
       await dynamo
         .update({
@@ -492,7 +497,7 @@ export const warmFunction = new aws.lambda.CallbackFunction(
         FlexibleTimeWindow: {
           Mode: "OFF",
         },
-        Name: projectFunction.warmerArn || `${projectId}-${functionName}`,
+        Name: `${projectId}-${functionName}`,
         ScheduleExpression: toCronExpression(timer.toISOString()),
         Target: {
           Arn: warmInvocation.arn.get(),

@@ -67,7 +67,9 @@ export const FunctionNextPrediction = () => {
             <LoadingButton
               variant="contained"
               loading={creatingWarmer}
-              disabled={creatingWarmer || !result.time}
+              disabled={
+                creatingWarmer || !result.time || new Date(result.time).getTime() < Date.now()
+              }
               onClick={() => handleWarmFunction(result.functionName, result.time)}
             >
               Create Warmer
