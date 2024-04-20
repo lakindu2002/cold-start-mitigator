@@ -9,8 +9,12 @@ import {
   SuccessWithData,
 } from "../helpers/response-helpers";
 import { Parse } from "../helpers/event-helpers";
-import { ProjectFunctionLogs, ProjectTable } from "../../dynamodb";
-import { Project, ProjectFunctionLog } from "../../types";
+import {
+  ProjectFunctionLogs,
+  ProjectFunctions,
+  ProjectTable,
+} from "../../dynamodb";
+import { Project, ProjectFunction, ProjectFunctionLog } from "../../types";
 import { integrateWithRole } from "../../utils/integrate-with-role";
 import { ManagedPolicy } from "@pulumi/aws/iam";
 
@@ -319,6 +323,79 @@ export const predictNextInvocationHandler = new aws.lambda.CallbackFunction(
         .promise();
 
       return SuccessWithData({ resp });
+    },
+  }
+);
+
+export const getFunctionsPerProject = new aws.lambda.CallbackFunction(
+  `${stage}-get-functions-per-project`,
+  {
+    memorySize: 1024,
+    timeout: 30,
+    callback: async (
+      event: awsx.classic.apigateway.Request
+    ): Promise<awsx.classic.apigateway.Response> => {
+      const { pathParams } = Parse(event);
+      const { projectId } = pathParams;
+
+      const dynamo = new awsSdk.DynamoDB.DocumentClient();
+      const functions: ProjectFunction[] = [];
+      let functionsNextKey: any = undefined;
+      do {
+        const { Items = [], LastEvaluatedKey } = await dynamo
+          .query({
+            TableName: ProjectFunctions.name.get(),
+            IndexName: "by-project-id-function-id",
+            KeyConditionExpression: "#projectId = :projectId",
+            ExpressionAttributeNames: {
+              "#projectId": "projectId",
+            },
+            ExpressionAttributeValues: {
+              ":projectId": projectId,
+            },
+            ExclusiveStartKey: functionsNextKey,
+          })
+          .promise();
+
+        functions.push(...(Items as ProjectFunction[]));
+        functionsNextKey = LastEvaluatedKey;
+      } while (functionsNextKey);
+
+      const promises = functions.map(async (eachFunction) => {
+        // get last invoked at
+        const { Items = [] } = await dynamo
+          .query({
+            TableName: ProjectFunctionLogs.name.get(),
+            IndexName: "by-project-id-function-name-invoked-at",
+            KeyConditionExpression:
+              "#projectIdfunctionName = :projectIdfunctionName",
+            ExpressionAttributeNames: {
+              "#projectIdfunctionName": "projectIdfunctionName",
+            },
+            ExpressionAttributeValues: {
+              ":projectIdfunctionName": `${projectId}#${eachFunction.name}`,
+            },
+            ScanIndexForward: false,
+            Limit: 1,
+          })
+          .promise();
+
+        console.log({ Items });
+
+        const lastInvokedAt = Items[0] as ProjectFunctionLog;
+
+        return {
+          ...eachFunction,
+          ...(lastInvokedAt && {
+            lastInvokedAt: Number(lastInvokedAt.lastInvokedAt.split("#")[1]),
+            wasCold: lastInvokedAt.isCold,
+          }),
+        };
+      });
+
+      const functionsWithInvocationTime = await Promise.all(promises);
+
+      return SuccessWithData({ functions: functionsWithInvocationTime });
     },
   }
 );

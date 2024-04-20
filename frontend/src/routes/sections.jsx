@@ -12,6 +12,7 @@ export const SettingsPage = lazy(() => import('src/pages/settings'));
 export const RegisterPage = lazy(() => import('src/pages/register'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 export const CreateProjectPage = lazy(() => import('src/pages/create-project'));
+export const ProjectFunctionsPage = lazy(() => import('src/pages/functions'));
 
 // ----------------------------------------------------------------------
 
@@ -34,6 +35,10 @@ export default function Router() {
         {
           path: 'settings',
           element: <SettingsPage />,
+        },
+        {
+          path: 'functions',
+          element: <ProjectFunctionsPage />,
         },
       ],
     },

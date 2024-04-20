@@ -42,6 +42,11 @@ export default function Nav({ openNav, onCloseNav }) {
       icon: icon('ic_analytics'),
     },
     {
+      title: 'functions',
+      path: `/projects/${project?.id}/functions`,
+      icon: icon('ic_lambda'),
+    },
+    {
       title: 'settings',
       path: `/projects/${project?.id}/settings`,
       icon: icon('ic_blog'),

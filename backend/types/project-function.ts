@@ -14,4 +14,14 @@ export interface ProjectFunction {
   updatedAt: number;
   id: string;
   projectId: string;
+
+  /**
+   * Filled only for the query, Otherwise omit it.
+   */ 
+  lastInvokedAt?: number;
+
+  /**
+   * Filled only for the query, Otherwise omit it.
+   */
+  wasCold?: boolean;
 }

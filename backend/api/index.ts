@@ -42,6 +42,12 @@ export const api = new awsx.classic.apigateway.API(`${stage}-api-gateway`, {
       authorizers: output.cognitoAuthorizer,
     },
     {
+      path: "/projects/{projectId}/functions",
+      method: "GET",
+      eventHandler: projects.getFunctionsPerProject,
+      authorizers: output.cognitoAuthorizer,
+    },
+    {
       path: "/projects/{projectId}/functions/predict",
       method: "POST",
       eventHandler: projects.predictNextInvocationHandler,

@@ -23,6 +23,12 @@ export const ProjectFunctions = new aws.dynamodb.Table(
         rangeKey: "projectId",
         projectionType: "KEYS_ONLY",
       },
+      {
+        name: "by-project-id-function-id",
+        hashKey: "projectId",
+        rangeKey: "id",
+        projectionType: "ALL",
+      },
     ],
   }
 );
