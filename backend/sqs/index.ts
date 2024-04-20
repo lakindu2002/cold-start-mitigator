@@ -32,6 +32,17 @@ const logCollectionQueue = new aws.sqs.Queue(`${stage}-log-collection-queue`, {
   ),
 });
 
+const predictionQueue = new aws.sqs.Queue(`${stage}-prediction-queue`, {
+  delaySeconds: 5,
+  visibilityTimeoutSeconds: 300,
+  redrivePolicy: deadLetterQueue.arn.apply((arn) =>
+    JSON.stringify({
+      maxReceiveCount: 5, // if consumer fails to process message 5 times, move to DLQ and remove from client
+      deadLetterTargetArn: arn,
+    })
+  ),
+});
+
 const csvCreationQueue = new aws.sqs.Queue(`${stage}-csv-creation-queue`, {
   delaySeconds: 0,
   visibilityTimeoutSeconds: 300,
@@ -47,4 +58,5 @@ export const Queues = {
   globalScheduleProcessingQueue,
   logCollectionQueue,
   csvCreationQueue,
+  predictionQueue,
 };

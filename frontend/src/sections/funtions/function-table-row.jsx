@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import PropTypes from 'prop-types';
 
 import Popover from '@mui/material/Popover';
+import { Box, Tooltip } from '@mui/material';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import MenuItem from '@mui/material/MenuItem';
@@ -26,6 +27,9 @@ export default function FunctionTableRow({
   cold,
   handleClick,
   handleViewLogs,
+  warmerArn,
+  warmerTime,
+  warmedAt,
 }) {
   const [open, setOpen] = useState(null);
 
@@ -39,13 +43,39 @@ export default function FunctionTableRow({
 
   return (
     <>
-      <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
+      <TableRow
+        hover
+        tabIndex={-1}
+        role="checkbox"
+        selected={selected}
+        sx={{
+          ...(warmerArn && {
+            background: (theme) => theme.palette.warning.light,
+          }),
+        }}
+      >
         <TableCell padding="checkbox">
           <Checkbox disableRipple checked={selected} onChange={handleClick} />
         </TableCell>
 
         <TableCell component="th" scope="row" padding="none">
           {name}
+          {(warmerTime || warmedAt) && (
+            <Tooltip
+              title={
+                warmedAt && !warmerTime
+                  ? `Function was warmed at ${format(warmedAt, 'dd MMMM yyyy hh:mm:ss a')}`
+                  : `Function set to be invoked at ${format(
+                      new Date(warmerTime),
+                      'dd MMMM yyyy hh:mm:ss a'
+                    )}`
+              }
+            >
+              <Box>
+                <Iconify icon="eva:question-mark-fill" />
+              </Box>
+            </Tooltip>
+          )}
         </TableCell>
 
         <TableCell>{arn}</TableCell>
@@ -110,4 +140,7 @@ FunctionTableRow.propTypes = {
   lastInvokedAt: PropTypes.number,
   cold: PropTypes.bool,
   handleViewLogs: PropTypes.func,
+  warmerArn: PropTypes.string,
+  warmerTime: PropTypes.number,
+  warmedAt: PropTypes.number,
 };

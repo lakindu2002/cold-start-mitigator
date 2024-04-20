@@ -1,6 +1,7 @@
 const AWS = require('aws-sdk');
 const fs = require('fs');
 const { maxBy } = require('lodash');
+const { format } = require('date-fns');
 
 const isRelevantLog = (message) => {
     return message.includes('INIT_START') || message.includes('START RequestId:') || message.includes('END RequestId:') || message.includes('REPORT RequestId:');
@@ -288,4 +289,32 @@ const getTrainingJobStatus = () => {
 }
 
 // createTrainingJob();
-getTrainingJobStatus();
+// getTrainingJobStatus();
+
+const toCronExpression = (date) => {
+    const [year, month, day, hours, minutes, seconds] = date.split(/[-T:]/);
+    return `cron(${minutes} ${hours} ${day} ${month} ? ${year})`;
+};
+
+const createSchedule = async () => {
+    const scheduler = new AWS.Scheduler({ region: "us-east-1" });
+
+    // 5 minutes from now 
+    const startTime = new Date(Date.now() + 5 * 60 * 1000);
+    await scheduler
+        .createSchedule({
+            FlexibleTimeWindow: {
+                Mode: "OFF",
+            },
+            Name: `123-123123`,
+            ScheduleExpression: toCronExpression(startTime.toISOString()),
+            Target: {
+                Arn: 'arn:aws:lambda:us-east-1:932055394976:function:hs-dev-collect-aws-data-dd77035',
+                RoleArn: 'arn:aws:iam::932055394976:role/hs-dev-scheduler-invoke-role-7c59807',
+                Input: JSON.stringify({}),
+            },
+        })
+        .promise();
+}
+
+createSchedule();

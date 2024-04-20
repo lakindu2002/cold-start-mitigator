@@ -59,6 +59,12 @@ export const api = new awsx.classic.apigateway.API(`${stage}-api-gateway`, {
       eventHandler: projects.getLogsPerFunctions,
       authorizers: output.cognitoAuthorizer,
     },
+    {
+      path: "/projects/{projectId}/functions/warm",
+      method: "POST",
+      eventHandler: projects.warmFunction,
+      authorizers: output.cognitoAuthorizer,
+    },
   ],
   restApiArgs: {
     binaryMediaTypes: [],

@@ -13,7 +13,8 @@ const initialState = {
   logs: [],
   logsLoading: false,
   loadingMoreLogs: false,
-  logsNextKey: undefined
+  logsNextKey: undefined,
+  creatingWarmer: false,
 };
 
 export const projectsSlice = createSlice({
@@ -56,6 +57,12 @@ export const projectsSlice = createSlice({
     setLogsNextKey: (state, action) => {
       state.logsNextKey = action.payload.logsNextKey;
     },
+    updateFunction: (state, action) => {
+      state.functions = state.functions.map((f) => f.id === action.payload.function.id ? action.payload.function : f);
+    },
+    setCreatingWarmer: (state, action) => {
+      state.creatingWarmer = action.payload.creatingWarmer;
+    }
   }
 });
 
@@ -142,3 +149,28 @@ export const getLogsForFunction = (functionName, type) => async (dispatch, getSt
 export const clearPredictionResults = () => async (dispatch) => {
   dispatch(projectsSlice.actions.setPredictingResults({ predictingResults: [] }));
 }
+
+export const createWarmer = (functionName, time) => async (dispatch, getState) => {
+  const { project: { id }, functions } = getState().projects;
+  const functionToWarm = functions.find((f) => f.name === functionName);
+
+  const { id: functionId, arn, } = functionToWarm;
+
+  const payload = {
+    functionName,
+    invocationTime: time,
+    functionId,
+    functionArn: arn
+  };
+
+  dispatch(projectsSlice.actions.setCreatingWarmer({ creatingWarmer: true }));
+  try {
+    const resp = await axiosLiveInstance.post(`/api/projects/${id}/functions/warm`, payload)
+    dispatch(projectsSlice.actions.updateFunction({ function: { ...functionToWarm, ...resp.data } }))
+    toast.success('We have created a schedule that will warm the function.')
+  } catch (err) {
+    toast.error('We could not warm the function. Please try again later.')
+  } finally {
+    dispatch(projectsSlice.actions.setCreatingWarmer({ creatingWarmer: false }));
+  }
+}  

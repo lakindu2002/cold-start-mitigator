@@ -90,10 +90,7 @@ def preprocess_data(data, scaler, function_dummies, function_name_to_predict):
         "time_since_last_invocation"
     ].transform(lambda x: x.fillna(method="bfill"))
 
-    recent_data = recent_data[
-        (recent_data["time_since_last_invocation"].isnull())
-        | (recent_data["time_since_last_invocation"] >= 60)
-    ]
+    recent_data = recent_data[(recent_data["time_since_last_invocation"] >= 60)]
 
     # Move the 'time_since_last_invocation' column to the second position
     time_since_last_invocation_column = recent_data.pop("time_since_last_invocation")
@@ -167,14 +164,16 @@ def handler(event, context):
         ScanIndexForward=False,
         Limit=100,
     )
-    
+
     # Sort the data by 'lastInvokedAt' in descending order
-    sort_data = sorted(response["Items"], key=lambda x: x["lastInvokedAt"], reverse=True)
-    
+    sort_data = sorted(
+        response["Items"], key=lambda x: x["lastInvokedAt"], reverse=True
+    )
+
     data = pd.DataFrame(sort_data)
 
     x = preprocess_data(data, scaler, function_dummies, function_name)
-    
+
     # predictions are the scaled predictions from  model
     predictions = model.predict(x, batch_size=19)
     # prepare a dummy array with the same shape as the training feature array

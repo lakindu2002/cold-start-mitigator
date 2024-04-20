@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Dialog,
@@ -14,12 +15,12 @@ import {
   DialogContent,
 } from '@mui/material';
 
-import { clearPredictionResults } from 'src/redux/slices/projects';
+import { createWarmer, clearPredictionResults } from 'src/redux/slices/projects';
 
 import Iconify from './iconify';
 
 export const FunctionNextPrediction = () => {
-  const { predictingResults } = useSelector((state) => state.projects);
+  const { predictingResults, creatingWarmer } = useSelector((state) => state.projects);
   const [open, setOpen] = useState(false);
   const dispatch = useDispatch();
 
@@ -38,6 +39,10 @@ export const FunctionNextPrediction = () => {
     dispatch(clearPredictionResults());
   };
 
+  const handleWarmFunction = (functionName, time) => {
+    dispatch(createWarmer(functionName, time));
+  };
+
   return (
     <Dialog open={open} onClose={toggleOpen} maxWidth="sm">
       <DialogTitle>
@@ -52,9 +57,21 @@ export const FunctionNextPrediction = () => {
         {predictingResults.map((result) => (
           <Box key={result.id}>
             <Typography>
-              Function Name - {result.functionName} | Next Invocation Time:
-              <b>{format(result.time, 'yyyy-MM-dd HH:mm:ss')}</b>
+              Function Name - {result.functionName} |{' '}
+              <b>
+                {result.message
+                  ? result.message
+                  : `Next Invocation Time: ${format(result.time, 'yyyy-MM-dd HH:mm:ss')}`}{' '}
+              </b>
             </Typography>
+            <LoadingButton
+              variant="contained"
+              loading={creatingWarmer}
+              disabled={creatingWarmer || !result.time}
+              onClick={() => handleWarmFunction(result.functionName, result.time)}
+            >
+              Create Warmer
+            </LoadingButton>
             <Divider sx={{ my: 2 }} />
           </Box>
         ))}

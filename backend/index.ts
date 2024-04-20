@@ -13,7 +13,12 @@ import {
 } from "./dynamodb";
 import { output } from "./cognito";
 import { Queues } from "./sqs";
-import { collectAwsData, logCollectionLambda, createCsvData } from "./triggers";
+import {
+  collectAwsData,
+  logCollectionLambda,
+  createCsvData,
+  getNextInvocation
+} from "./triggers";
 
 Queues.globalScheduleProcessingQueue.onEvent("onPush", collectAwsData, {
   batchSize: 1,
@@ -26,6 +31,14 @@ Queues.logCollectionQueue.onEvent("onLogCollectPush", logCollectionLambda, {
 Queues.csvCreationQueue.onEvent("onCsvCreateToS3", createCsvData, {
   batchSize: 1,
 });
+
+Queues.predictionQueue.onEvent(
+  "onTriggerPredictionRequest",
+  getNextInvocation,
+  {
+    batchSize: 1,
+  }
+);
 
 export const bucketName = publicBucket.bucket;
 export const objectUrl = roleCreationCloudFormationStackObjectUrl;

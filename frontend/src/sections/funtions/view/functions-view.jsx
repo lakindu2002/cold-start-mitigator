@@ -160,8 +160,11 @@ const FunctionsView = () => {
                         memorySize={row.memorySize}
                         runtime={row.runtime}
                         timeout={row.timeout}
+                        warmerArn={row.warmerArn}
+                        warmerTime={row.warmerTime}
                         lastInvokedAt={row.lastInvokedAt}
                         cold={row.wasCold}
+                        warmedAt={row.warmedAt}
                         selected={selected.indexOf(row.name) !== -1}
                         handleClick={(event) => handleClick(event, row.name)}
                         handleViewLogs={() =>

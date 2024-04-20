@@ -17,7 +17,13 @@ import {
 import { Project, ProjectFunction, ProjectFunctionLog } from "../../types";
 import { integrateWithRole } from "../../utils/integrate-with-role";
 import { ManagedPolicy } from "@pulumi/aws/iam";
-import { addSeconds } from "date-fns";
+import { addSeconds, subMinutes } from "date-fns";
+import {
+  createPredictionTime,
+  toCronExpression,
+} from "../../utils/create-prediction-time";
+import { SchedulerInvokeRole } from "../../iam";
+import { warmInvocation } from "../../triggers";
 
 const stage = pulumi.getStack();
 
@@ -289,15 +295,15 @@ new aws.iam.RolePolicyAttachment(`${stage}-assign-dynamodb-read`, {
 });
 
 // Create a Lambda function using the Docker image
-const predictNextInvocation = new aws.lambda.Function(
+export const predictNextInvocation = new aws.lambda.Function(
   `${stage}-predict-next-invocation`,
   {
     packageType: "Image",
     imageUri:
       // Image hosted on Heat Shield's ECR
-      "932055394976.dkr.ecr.us-east-1.amazonaws.com/heat-shield-evaluate@sha256:9c00a7e2858763c9f14c80d252735c0d3414dd4de08083a0cddb4c18500a0d20",
+      "932055394976.dkr.ecr.us-east-1.amazonaws.com/heat-shield-evaluate:latest",
     role: predictNextInvocationRole.arn,
-    timeout: 50,
+    timeout: 500,
     memorySize: 10239,
   }
 );
@@ -314,83 +320,16 @@ export const predictNextInvocationHandler = new aws.lambda.CallbackFunction(
       const { projectId } = pathParams;
       const { functionNames } = body as { functionNames: string[] };
 
-      // get the last invocation timestamp for each function
-      const dynamo = new awsSdk.DynamoDB.DocumentClient();
-
-      const lastInvocationTimes = await Promise.all(
-        functionNames.map(async (functionName) => {
-          const { Items = [] } = await dynamo
-            .query({
-              TableName: ProjectFunctionLogs.name.get(),
-              IndexName: "by-project-id-function-name-invoked-at",
-              KeyConditionExpression:
-                "#projectIdfunctionName = :projectIdfunctionName",
-              ExpressionAttributeNames: {
-                "#projectIdfunctionName": "projectIdfunctionName",
-              },
-              ExpressionAttributeValues: {
-                ":projectIdfunctionName": `${projectId}#${functionName}`,
-              },
-              ScanIndexForward: false,
-              Limit: 1,
-            })
-            .promise();
-
-          const lastInvokedAt = Items[0] as ProjectFunctionLog;
-
-          return {
-            functionName,
-            time: lastInvokedAt
-              ? Number(lastInvokedAt.lastInvokedAt.split("#")[1])
-              : 0,
-          };
-        })
-      );
-
-      const lambda = new awsSdk.Lambda();
       const promises = functionNames.map(async (functionName) => {
-        const resp = await lambda
-          .invoke({
-            FunctionName: predictNextInvocation.arn.get(),
-            Payload: JSON.stringify({ projectId, functionName }),
-          })
-          .promise();
-
-        const payload = JSON.parse(resp.Payload as string);
-
-        if (payload.statusCode === 200) {
-          const body = JSON.parse(payload.body);
-          const timestamps = (body.data || []) as number[];
-          const lowestTimeStamp = timestamps.filter(
-            (eachTimestamp: number) => eachTimestamp > 0
-          )[0];
-
-          return { time: lowestTimeStamp, functionName };
-        }
-        return { time: 0, functionName };
+        const invocation = await createPredictionTime(
+          projectId as string,
+          functionName
+        );
+        return invocation;
       });
       const results = await Promise.all(promises);
 
-      const newResults = await Promise.all(
-        results.map(async (eachResult) => {
-          const { functionName, time: timeInSeconds } = eachResult;
-          const lastInvocationTimeInMilliSeconds = lastInvocationTimes.find(
-            (each) => each.functionName === functionName
-          )?.time as number;
-
-          const nextInvocationTime = addSeconds(
-            lastInvocationTimeInMilliSeconds,
-            timeInSeconds
-          );
-
-          return {
-            functionName,
-            time: nextInvocationTime.getTime(),
-          };
-        })
-      );
-
-      return SuccessWithData({ results: newResults });
+      return SuccessWithData({ results });
     },
   }
 );
@@ -505,6 +444,104 @@ export const getLogsPerFunctions = new aws.lambda.CallbackFunction(
         .promise();
 
       return SuccessWithData({ logs: Items, nextKey: LastEvaluatedKey });
+    },
+  }
+);
+
+export const warmFunction = new aws.lambda.CallbackFunction(
+  `${stage}-warm-function`,
+  {
+    memorySize: 1024,
+    timeout: 30,
+    callback: async (
+      event: awsx.classic.apigateway.Request
+    ): Promise<awsx.classic.apigateway.Response> => {
+      const { pathParams, body } = Parse(event);
+      const { projectId } = pathParams;
+      const { functionName, invocationTime, functionId, functionArn } =
+        body as {
+          functionName: string;
+          invocationTime: number;
+          functionId: string;
+          functionArn: string;
+        };
+
+      const dynamo = new awsSdk.DynamoDB.DocumentClient();
+      const { Item } = await dynamo
+        .get({
+          TableName: ProjectTable.name.get(),
+          Key: { id: projectId },
+        })
+        .promise();
+
+      const scheduler = new awsSdk.Scheduler();
+      const timer = subMinutes(invocationTime, 1);
+
+      const project = Item as Project;
+
+      const { Item: ProjectFunctionResp } = await dynamo
+        .get({
+          TableName: ProjectFunctions.name.get(),
+          Key: { id: functionId, projectId },
+        })
+        .promise();
+
+      const projectFunction = ProjectFunctionResp as ProjectFunction;
+
+      const payload = {
+        FlexibleTimeWindow: {
+          Mode: "OFF",
+        },
+        Name: projectFunction.warmerArn || `${projectId}-${functionName}`,
+        ScheduleExpression: toCronExpression(timer.toISOString()),
+        Target: {
+          Arn: warmInvocation.arn.get(),
+          RoleArn: SchedulerInvokeRole.arn.get(),
+          Input: JSON.stringify({
+            projectId,
+            functionId,
+            functionName,
+            roleArn: project.roleArn,
+            externalId: project.externalId,
+            functionArn,
+          }),
+        },
+      };
+
+      let schedulerArn;
+      if (projectFunction.warmerArn) {
+        const { ScheduleArn } = await scheduler
+          .updateSchedule(payload)
+          .promise();
+        schedulerArn = ScheduleArn;
+      } else {
+        const { ScheduleArn } = await scheduler
+          .createSchedule(payload)
+          .promise();
+        schedulerArn = ScheduleArn;
+      }
+
+      await dynamo
+        .update({
+          TableName: ProjectFunctions.name.get(),
+          Key: { id: functionId, projectId },
+          UpdateExpression:
+            "set #warmerArn = :warmerArn, #warmerTime = :warmerTime",
+          ExpressionAttributeNames: {
+            "#warmerArn": "warmerArn",
+            "#warmerTime": "warmerTime",
+          },
+          ExpressionAttributeValues: {
+            ":warmerArn": schedulerArn,
+            ":warmerTime": timer.toISOString(),
+          },
+        })
+        .promise();
+
+      return SuccessWithData({
+        warmerArn: warmInvocation.arn.get(),
+        warmerTime: timer.toISOString(),
+      });
     },
   }
 );
