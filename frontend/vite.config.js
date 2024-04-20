@@ -38,5 +38,22 @@ export default defineConfig({
   },
   preview: {
     port: 3030,
+    proxy: {
+      '/api': {
+        target: 'https://rgj06rkxwd.execute-api.us-east-1.amazonaws.com/stage/',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    }
   },
+  production: {
+    port: 3030,
+    proxy: {
+      '/api': {
+        target: 'https://rgj06rkxwd.execute-api.us-east-1.amazonaws.com/stage/',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    }
+  }
 });

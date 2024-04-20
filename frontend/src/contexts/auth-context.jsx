@@ -1,5 +1,6 @@
 /* eslint-disable react/jsx-no-constructed-context-values */
 import PropTypes from 'prop-types';
+import toast from 'react-hot-toast';
 /* eslint-disable no-undef */
 import { Amplify } from 'aws-amplify';
 import { useDispatch } from 'react-redux';
@@ -18,7 +19,6 @@ import {
 import axios from 'src/lib/axios';
 import { amplifyConfig } from 'src/config';
 import { setProject } from 'src/redux/slices/projects';
-import toast from 'react-hot-toast';
 
 Amplify.configure(amplifyConfig);
 
