@@ -18,6 +18,7 @@ import {
 import axios from 'src/lib/axios';
 import { amplifyConfig } from 'src/config';
 import { setProject } from 'src/redux/slices/projects';
+import toast from 'react-hot-toast';
 
 Amplify.configure(amplifyConfig);
 
@@ -223,7 +224,7 @@ export const AuthProvider = ({ children }) => {
       case 'CONFIRM_RESET_PASSWORD_WITH_CODE':
         // eslint-disable-next-line no-case-declarations
         const { codeDeliveryDetails } = nextStep;
-        console.log(`Confirmation code was sent to ${codeDeliveryDetails.deliveryMedium}`);
+        toast.success(`Confirmation code was sent to ${codeDeliveryDetails.deliveryMedium}`);
         // Collect the confirmation code from the user and pass to confirmResetPassword.
         break;
       case 'DONE':
@@ -244,8 +245,10 @@ export const AuthProvider = ({ children }) => {
       dispatch({
         type: 'PASSWORD_RESET',
       });
+      toast.success('Password reset successfully');
     } catch (error) {
       console.log(error);
+      throw error;
     }
   }
 

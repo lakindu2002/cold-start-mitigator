@@ -11,6 +11,7 @@ const unprotectedRoutes = [
   '/reset-password',
   '/',
   '/create-project',
+  '/password-recovery',
 ];
 
 export const AuthGuard = (props) => {
@@ -26,7 +27,7 @@ export const AuthGuard = (props) => {
       return;
     }
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !unprotectedRoutes.includes(pathname)) {
       navigate('/login');
     } else {
       if (pathname === '/create-project') {

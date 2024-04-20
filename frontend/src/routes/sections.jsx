@@ -13,6 +13,7 @@ export const Page404 = lazy(() => import('src/pages/page-not-found'));
 export const CreateProjectPage = lazy(() => import('src/pages/create-project'));
 export const ProjectFunctionsPage = lazy(() => import('src/pages/functions'));
 export const ProjectFunctionLogsPage = lazy(() => import('src/pages/logs'));
+export const ForgotPasswordPage = lazy(() => import('src/pages/forgot-password'));
 
 // ----------------------------------------------------------------------
 
@@ -55,6 +56,7 @@ export default function Router() {
         { path: 'confirm-account', element: <ConfirmAccountPage /> },
         { path: 'register', element: <RegisterPage /> },
         { path: 'create-project', element: <CreateProjectPage /> },
+        { path: 'password-recovery', element: <ForgotPasswordPage /> },
       ],
     },
     {
