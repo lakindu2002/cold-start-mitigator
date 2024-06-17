@@ -16,7 +16,7 @@ import {
 import { Project, ProjectFunction, ProjectFunctionLog } from "../../types";
 import { integrateWithRole } from "../../utils/integrate-with-role";
 import { ManagedPolicy } from "@pulumi/aws/iam";
-import { subMinutes } from "date-fns";
+import { subMinutes, subMonths } from "date-fns";
 import {
   createPredictionTime,
   toCronExpression,
@@ -180,25 +180,24 @@ export const getProjectById = new aws.lambda.CallbackFunction(
       const logs: ProjectFunctionLog[] = [];
       let logsNextKey: any = undefined;
 
-      do {
-        const { LastEvaluatedKey: logKey, Items: newLogs = [] } = await dynamo
-          .query({
-            TableName: ProjectFunctionLogs.name.get(),
-            IndexName: "by-project-id-invoked-at",
-            KeyConditionExpression: "#projectId = :projectId",
-            ExpressionAttributeNames: {
-              "#projectId": "projectId",
-            },
-            ExpressionAttributeValues: {
-              ":projectId": projectId,
-            },
-            ExclusiveStartKey: logsNextKey,
-          })
-          .promise();
+      const { LastEvaluatedKey: logKey, Items: newLogs = [] } = await dynamo
+        .query({
+          TableName: ProjectFunctionLogs.name.get(),
+          IndexName: "by-project-id-invoked-at",
+          KeyConditionExpression: "#projectId = :projectId",
+          ExpressionAttributeNames: {
+            "#projectId": "projectId",
+          },
+          ExpressionAttributeValues: {
+            ":projectId": projectId,
+          },
+          Limit:100,
+          ExclusiveStartKey: logsNextKey,
+        })
+        .promise();
 
-        logs.push(...(newLogs as ProjectFunctionLog[]));
-        logsNextKey = logKey;
-      } while (logsNextKey);
+      logs.push(...(newLogs as ProjectFunctionLog[]));
+      logsNextKey = logKey;
 
       const coldStartLogs = logs.filter((log) => log.isCold);
 
